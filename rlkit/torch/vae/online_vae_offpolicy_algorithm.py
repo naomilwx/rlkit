@@ -1,19 +1,26 @@
-import gtimer as gt
 from rlkit.core import logger
+# from rlkit.core.timer import timer
 from rlkit.data_management.online_vae_replay_buffer import \
     OnlineVaeRelabelingBuffer
 from rlkit.data_management.shared_obs_dict_replay_buffer \
     import SharedObsDictRelabelingBuffer
 import rlkit.torch.vae.vae_schedules as vae_schedules
+from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import (
     TorchBatchRLAlgorithm,
 )
 import rlkit.torch.pytorch_util as ptu
 from torch.multiprocessing import Process, Pipe
 from threading import Thread
+import numpy as np
+from rlkit.core.logging import add_prefix
+from rlkit.util.io import load_local_or_remote_file
+import torch
+from collections import OrderedDict
 
+from rlkit.torch.vae.conditional_conv_vae import DeltaCVAE
 
-class OnlineVaeAlgorithm(TorchBatchRLAlgorithm):
+class OnlineVaeOffpolicyAlgorithm(TorchBatchRLAlgorithm):
 
     def __init__(
             self,
@@ -26,6 +33,8 @@ class OnlineVaeAlgorithm(TorchBatchRLAlgorithm):
             parallel_vae_train=True,
             vae_min_num_steps_before_training=0,
             uniform_dataset=None,
+            dataset_path=None,
+            rl_offpolicy_num_training_steps=0,
             **base_kwargs
     ):
         super().__init__(*base_args, **base_kwargs)
@@ -45,9 +54,103 @@ class OnlineVaeAlgorithm(TorchBatchRLAlgorithm):
         self._update_subprocess_vae_thread = None
         self._vae_conn_pipe = None
 
+        self.dataset_path = dataset_path
+        if self.dataset_path:
+            for d in dataset_path:
+                self.load_dataset(d)
+
+        # train Q and policy rl_offpolicy_num_training_steps times
+        self.rl_offpolicy_num_training_steps = rl_offpolicy_num_training_steps
+
+    def pretrain(self):
+        logger.push_tabular_prefix("pretrain_q/")
+        # import ipdb; ipdb.set_trace()
+        for _ in range(self.rl_offpolicy_num_training_steps):
+            train_data = self.replay_buffer.random_batch(self.batch_size)
+
+            # hack to force logging
+            self.trainer._base_trainer._need_to_update_eval_statistics = True
+            self.trainer._base_trainer.eval_statistics = OrderedDict()
+
+            self.trainer.train(train_data)
+            logger.record_dict(self.trainer.get_diagnostics())
+            logger.dump_tabular(with_prefix=True, with_timestamp=False)
+        logger.pop_tabular_prefix()
+        # import ipdb; ipdb.set_trace()
+
+    def load_dataset(self, dataset_path):
+        dataset = load_local_or_remote_file(dataset_path)
+        dataset = dataset.item()
+
+        observations = dataset['observations']
+        actions = dataset['actions']
+
+        # dataset['observations'].shape # (2000, 50, 6912)
+        # dataset['actions'].shape # (2000, 50, 2)
+        # dataset['env'].shape # (2000, 6912)
+        N, H, imlength = observations.shape
+
+        self.vae.eval()
+        for n in range(N):
+            #i,j = np.random.randint(0, N), np.random.randint(0, H)
+            x0 = ptu.from_numpy(dataset['env'][n:n+1, :] / 255.0)
+            x = ptu.from_numpy(observations[n, :, :] / 255.0)
+
+            if isinstance(self.vae, DeltaCVAE):
+                latents = self.vae.encode(x, x0, distrib=False)
+
+                r1, r2 = self.vae.latent_sizes
+                conditioning = latents[0, r1:]
+                #goal_cond = ptu.from_numpy(dataset['env'][i:i+1, :] / 255.0)
+                #goal_img = ptu.from_numpy(observations[i, j, :] / 255.0).reshape(goal_cond.shape[0], goal_cond.shape[1])
+                #goal = self.vae.encode(goal_img, goal_cond, distrib=False)
+
+                goal = torch.cat([ptu.randn(self.vae.latent_sizes[0]), conditioning])
+            else: # normal VAE
+                latents = self.vae.encode(x)[0]
+                goal = ptu.randn(self.vae.representation_size)
+
+            goal = ptu.get_numpy(goal) # latents[-1, :]
+
+            latents = ptu.get_numpy(latents)
+            latent_delta = latents - goal
+            distances = np.zeros((H - 1, 1))
+            for i in range(H - 1):
+                distances[i, 0] = np.linalg.norm(latent_delta[i + 1, :])
+
+            terminals = np.zeros((H - 1, 1))
+            #terminals[-1, 0] = 1
+            path = dict(
+                observations=[],
+                actions=actions[n, :H-1, :],
+                next_observations=[],
+                rewards=-distances,
+                terminals=terminals,
+            )
+
+            for t in range(H - 1):
+                # reward = -np.linalg.norm(latent_delta[i, :])
+
+                obs = dict(
+                    latent_observation=latents[t, :],
+                    latent_achieved_goal=latents[t, :],
+                    latent_desired_goal=goal,
+                )
+                next_obs = dict(
+                    latent_observation=latents[t+1, :],
+                    latent_achieved_goal=latents[t+1, :],
+                    latent_desired_goal=goal,
+                )
+
+                path['observations'].append(obs)
+                path['next_observations'].append(next_obs)
+
+            # import ipdb; ipdb.set_trace()
+            self.replay_buffer.add_path(path)
+
     def _end_epoch(self):
         self._train_vae(self.epoch)
-        timer.stamp('vae training')
+        # timer.stamp('vae training')
         super()._end_epoch()
 
     def _get_diagnostics(self):

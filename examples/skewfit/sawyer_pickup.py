@@ -147,6 +147,10 @@ if __name__ == "__main__":
         __file__.replace('/', '-').replace('_', '-').split('.')[0]
     )
 
+    n_seeds = 5
+    mode = 'ec2'
+    exp_prefix = 'rlkit-skewfit-pickup4'
+
     # n_seeds = 3
     # mode = 'gcp'
     # exp_prefix = 'skew-fit-pickup-reference-post-refactor'
@@ -161,9 +165,10 @@ if __name__ == "__main__":
                 use_gpu=True,
                 snapshot_gap=200,
                 snapshot_mode='gap_and_last',
-                num_exps_per_instance=3,
-                gcp_kwargs=dict(
-                    zone='us-west1-b',
-                ),
+                region='us-west-2',
+                # num_exps_per_instance=3,
+                # gcp_kwargs=dict(
+                #     zone='us-west1-b',
+                # ),
 
             )
