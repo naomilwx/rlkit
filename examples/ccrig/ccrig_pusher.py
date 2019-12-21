@@ -43,7 +43,7 @@ if __name__ == "__main__":
             object_high=(x_high - 0.01, y_high - 0.01, 0.02),
             use_textures=True,
             init_camera=sawyer_init_camera_zoomed_in,
-            cylinder_radius=0.07,
+            cylinder_radius=0.05,
         ),
 
         grill_variant=dict(
@@ -192,7 +192,8 @@ if __name__ == "__main__":
             dict(x_values=(0, 1500,), y_values=(1, 50)),
         ],
         'train_vae_variant.algo_kwargs.batch_size': [128, ],
-        'train_vae_variant.algo_kwargs.lr': [1e-3, ],
+        'train_vae_variant.algo_kwargs.lr': [1e-4, ],
+        'train_vae_variant.algo_kwargs.weight_decay': [1e-4, ],
         'grill_variant.algo_kwargs.num_trains_per_train_loop':[1000,],
         'grill_variant.algo_kwargs.batch_size': [128,],
         'grill_variant.exploration_noise': [0.3],

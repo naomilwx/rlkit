@@ -43,7 +43,7 @@ if __name__ == "__main__":
             object_high=(x_high - 0.01, y_high - 0.01, 0.02),
             use_textures=True,
             init_camera=sawyer_init_camera_zoomed_in,
-            cylinder_radius=0.07,
+            cylinder_radius=0.075,
         ),
 
         grill_variant=dict(
@@ -126,12 +126,12 @@ if __name__ == "__main__":
                 y_values=(1, 100),
             ),
             context_schedule=1,
-            num_epochs=5,
+            num_epochs=1500,
             dump_skew_debug_plots=False,
             decoder_activation='sigmoid',
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
-                N=2000,
+                N=100000,
                 # dataset_path="/home/ashvin/Desktop/sim_puck_data.npy",
                 n_random_steps=10,
                 test_p=.9,
@@ -201,9 +201,9 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 1
-    mode = 'local'
-    exp_prefix = 'ccrig-pusher'
+    n_seeds = 5
+    mode = 'ec2'
+    exp_prefix = 'ccrig-pusher-big'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
