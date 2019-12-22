@@ -117,9 +117,7 @@ def train_vae(variant, return_data=False):
     if 'context_schedule' in variant:
         context_schedule = PiecewiseLinearSchedule(
             **variant['context_schedule'])
-    else:
-        context_schedule = PiecewiseLinearSchedule(
-            **dict(x_values=(0, 100000), y_values=(1, 1)))
+        variant['algo_kwargs']['context_schedule'] = context_schedule
     if variant.get('decoder_activation', None) == 'sigmoid':
         decoder_activation = torch.nn.Sigmoid()
     else:
@@ -147,7 +145,6 @@ def train_vae(variant, return_data=False):
     vae_trainer_class = variant.get('vae_trainer_class', ConvVAETrainer)
     trainer = vae_trainer_class(model, beta=beta,
                        beta_schedule=beta_schedule,
-                       context_schedule=context_schedule,
                        **variant['algo_kwargs'])
     save_period = variant['save_period']
 
@@ -208,13 +205,12 @@ def generate_vae_dataset(variant):
     conditional_vae_dataset = variant.get('conditional_vae_dataset', False)
     use_env_labels = variant.get('use_env_labels', False)
     use_linear_dynamics = variant.get('use_linear_dynamics', False)
-    enviorment_dataset = variant.get('enviorment_dataset', False)
     save_trajectories = variant.get('save_trajectories', False)
     save_trajectories = save_trajectories or use_linear_dynamics or conditional_vae_dataset
 
     tag = variant.get('tag', '')
 
-    assert N % n_random_steps == 0, "Fix N/horizon or dataset generation will fail"
+    # assert N % n_random_steps == 0, "Fix N/horizon or dataset generation will fail"
 
     from multiworld.core.image_env import ImageEnv, unormalize_image
     import rlkit.torch.pytorch_util as ptu
@@ -408,14 +404,6 @@ def generate_vae_dataset(variant):
         test_dataset = TrajectoryDataset({
             'observations': dataset['observations'][n:, :, :],
             'actions': dataset['actions'][n:, :, :]
-        })
-    elif enviorment_dataset:
-        n = int(n_random_steps * test_p)
-        train_dataset = EnvironmentDataset({
-            'observations': dataset['observations'][:, :n, :],
-        })
-        test_dataset = EnvironmentDataset({
-            'observations': dataset['observations'][:, n:, :],
         })
     elif conditional_vae_dataset:
         num_trajectories = N // n_random_steps

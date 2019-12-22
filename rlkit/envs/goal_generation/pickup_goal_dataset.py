@@ -52,7 +52,9 @@ def generate_vae_dataset_from_params(
         n_random_steps=100,
         vae_dataset_specific_env_kwargs=None,
         save_file_prefix=None,
+        **kwargs
 ):
+    print("WARNING, kwargs not used:", kwargs)
     from multiworld.core.image_env import ImageEnv, unormalize_image
     import time
 

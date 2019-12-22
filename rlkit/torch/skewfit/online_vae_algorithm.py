@@ -11,7 +11,9 @@ from rlkit.torch.torch_rl_algorithm import (
 import rlkit.torch.pytorch_util as ptu
 from torch.multiprocessing import Process, Pipe
 from threading import Thread
-
+import numpy as np
+from rlkit.core.logging import add_prefix
+from rlkit.core.timer import timer
 
 class OnlineVaeAlgorithm(TorchBatchRLAlgorithm):
 

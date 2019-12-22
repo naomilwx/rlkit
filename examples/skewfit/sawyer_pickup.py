@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     n_seeds = 5
     mode = 'ec2'
-    exp_prefix = 'rlkit-skewfit-pickup4'
+    exp_prefix = 'rlkit-skewfit-pickup'
 
     # n_seeds = 3
     # mode = 'gcp'

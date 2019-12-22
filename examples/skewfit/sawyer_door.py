@@ -107,9 +107,11 @@ if __name__ == "__main__":
             ),
             algo_kwargs=dict(
                 lr=1e-3,
+                batch_size=32,
             ),
             save_period=1,
         ),
+        region='us-west-2',
     )
 
     search_space = {
@@ -126,7 +128,7 @@ if __name__ == "__main__":
 
     n_seeds = 5
     mode = 'ec2'
-    exp_prefix = 'rlkit-skewfit-door4'
+    exp_prefix = 'rlkit-skewfit-door'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
