@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     search_space = {
         # 'train_vae_variant.latent_sizes': [(4, 4),],
-        'train_vae_variant.representation_size': [4, ],
+        'train_vae_variant.representation_size': [6, ],
     }
     sweeper = hyp.DeterministicHyperparameterSweeper(
         search_space, default_parameters=variant,

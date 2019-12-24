@@ -59,8 +59,8 @@ if __name__ == "__main__":
                 oracle_data=False,
                 vae_save_period=25,
                 parallel_vae_train=False,
-                dataset_path=None,
-                rl_offpolicy_num_training_steps=0,
+                # dataset_path=["/tmp/Multiobj2DWallEnv_N10000__imsize48_random_oracle_split_0reference4a.npy"],
+                # rl_offpolicy_num_training_steps=10000,
             ),
             td3_trainer_kwargs=dict(
                 discount=0.99,

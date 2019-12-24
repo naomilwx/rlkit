@@ -165,18 +165,22 @@ if __name__ == "__main__":
     )
 
     search_space = {
-        'train_vae_variant.latent_sizes': [(4, 4),],
-        'train_vae_variant.context_schedule': [
-            dict(x_values=(0, 1500), y_values=(1, 1)),
-        ],
+        'train_vae_variant.latent_sizes': [(2, 4),],
+        'train_vae_variant.context_schedule': [1.0, ],
+        'train_vae_variant.algo_kwargs.lr': [1e-4, ],
+        'train_vae_variant.algo_kwargs.weight_decay': [1e-4, ],
     }
     sweeper = hyp.DeterministicHyperparameterSweeper(
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 5
-    mode = 'ec2'
-    exp_prefix = 'ccrig-pointmass'
+    n_seeds = 1
+    mode = 'local'
+    exp_prefix = 'ccrig-pointmass-local'
+
+    # n_seeds = 5
+    # mode = 'ec2'
+    # exp_prefix = 'ccrig-pointmass'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
