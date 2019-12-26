@@ -186,7 +186,7 @@ if __name__ == "__main__":
     search_space = {
         'train_vae_variant.latent_sizes': [(6, 4),],
         'train_vae_variant.context_schedule': [
-            dict(x_values=(0, 1500), y_values=(1, 1)),
+            1.0,
         ],
         'train_vae_variant.beta_schedule_kwargs': [
             dict(x_values=(0, 1500,), y_values=(1, 50)),

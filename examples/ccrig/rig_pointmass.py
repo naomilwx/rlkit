@@ -114,19 +114,21 @@ if __name__ == "__main__":
             decoder_activation='sigmoid',
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
-                N=10000,
+                N=100000,
+                # dataset_path="/home/ashvin/Desktop/sim_puck_data.npy",
                 n_random_steps=10,
                 test_p=.9,
                 use_cached=False,
                 show=False,
-                oracle_dataset=True,
-                oracle_dataset_using_set_to_goal=True,
+                oracle_dataset=False,
+                oracle_dataset_using_set_to_goal=False,
                 non_presampled_goal_img_is_garbage=False,
                 random_rollout_data=True,
+                random_rollout_data_set_to_goal=True,
                 conditional_vae_dataset=True,
-                save_trajectories=True,
+                save_trajectories=False,
                 enviorment_dataset=False,
-                tag="reference4a",
+                tag="ccrig_tuning_orig_network",
             ),
             # vae_trainer_class=DeltaCVAETrainer,
             # vae_class=DeltaCVAE,
@@ -139,7 +141,7 @@ if __name__ == "__main__":
             algo_kwargs=dict(
                 start_skew_epoch=5000,
                 is_auto_encoder=False,
-                batch_size=32,
+                batch_size=128,
                 lr=1e-3,
                 skew_config=dict(
                     method='vae_prob',
@@ -167,6 +169,11 @@ if __name__ == "__main__":
     search_space = {
         # 'train_vae_variant.latent_sizes': [(4, 4),],
         'train_vae_variant.representation_size': [6, ],
+        'train_vae_variant.algo_kwargs.lr': [1e-3, ],
+        'train_vae_variant.algo_kwargs.weight_decay': [1e-3, ],
+        'train_vae_variant.beta_schedule_kwargs': [
+            dict(x_values=(0, 1500,), y_values=(1, 50)),
+        ],
     }
     sweeper = hyp.DeterministicHyperparameterSweeper(
         search_space, default_parameters=variant,
