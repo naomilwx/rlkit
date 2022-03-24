@@ -40,13 +40,13 @@ def sync_down(path, check_exists=True):
         os.environ["AWS_ACCESS_KEY_ID"] = AUTOCONFIG.aws_access_key()
         os.environ["AWS_SECRET_ACCESS_KEY"] = AUTOCONFIG.aws_access_secret()
 
-    full_s3_path = os.path.join(AWS_S3_PATH, path)
-    bucket_name, bucket_relative_path = split_s3_full_path(full_s3_path)
     try:
+        full_s3_path = os.path.join(AWS_S3_PATH, path)
+        bucket_name, bucket_relative_path = split_s3_full_path(full_s3_path)
         bucket = boto3.resource('s3').Bucket(bucket_name)
         bucket.download_file(bucket_relative_path, local_path)
     except Exception as e:
-        local_path = None
+        # local_path = None
         print("Failed to sync! path: ", path)
         print("Exception: ", e)
     return local_path

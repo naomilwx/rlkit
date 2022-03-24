@@ -42,6 +42,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
         self.num_expl_steps_per_train_loop = num_expl_steps_per_train_loop
         self.min_num_steps_before_training = min_num_steps_before_training
         self._start_epoch = start_epoch
+        gt.reset_root()
 
     def train(self):
         """Negative epochs are offline, positive epochs are online"""

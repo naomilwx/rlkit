@@ -89,6 +89,11 @@ def train_vae_and_update_variant(variant):
             skewfit_variant['vae_train_data'] = vae_train_data
             skewfit_variant['vae_test_data'] = vae_test_data
 
+def getMultiwoldEnv(env_id):
+    import gym
+    import multiworld
+    multiworld.register_all_envs()
+    return gym.make(env_id)
 
 def train_vae(variant, return_data=False):
     from rlkit.util.ml_util import PiecewiseLinearSchedule
@@ -137,6 +142,7 @@ def train_vae(variant, return_data=False):
                        beta_schedule=beta_schedule, **variant['algo_kwargs'])
     save_period = variant['save_period']
     dump_skew_debug_plots = variant.get('dump_skew_debug_plots', False)
+    print('running train_vae')
     for epoch in range(variant['num_epochs']):
         should_save_imgs = (epoch % save_period == 0)
         t.train_epoch(epoch)
@@ -209,10 +215,7 @@ def generate_vae_dataset(variant):
             now = time.time()
 
             if env_id is not None:
-                import gym
-                import multiworld
-                multiworld.register_all_envs()
-                env = gym.make(env_id)
+                env = getMultiwoldEnv(env_id)
             else:
                 if vae_dataset_specific_env_kwargs is None:
                     vae_dataset_specific_env_kwargs = {}
@@ -262,7 +265,7 @@ def generate_vae_dataset(variant):
                             action, _ = policy.get_action(policy_obs)
                             obs, _, _, _ = env.step(action)
                 elif oracle_dataset_using_set_to_goal:
-                    print(i)
+                    # print(i)
                     goal = env.sample_goal()
                     env.set_to_goal(goal)
                     obs = env._get_obs()
@@ -315,10 +318,7 @@ def get_envs(variant):
     vae = load_local_or_remote_file(vae_path) if type(
         vae_path) is str else vae_path
     if 'env_id' in variant:
-        import gym
-        import multiworld
-        multiworld.register_all_envs()
-        env = gym.make(variant['env_id'])
+        env = getMultiwoldEnv(variant['env_id'])
     else:
         env = variant["env_class"](**variant['env_kwargs'])
     if not do_state_exp:
@@ -562,6 +562,7 @@ def skewfit_experiment(variant):
 
     algorithm.to(ptu.device)
     vae.to(ptu.device)
+    print('running skewfit_experiment')
     algorithm.train()
 
 

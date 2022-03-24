@@ -65,8 +65,10 @@ class MyEncoder(json.JSONEncoder):
             }
         elif callable(o):
             return {
-                '$function': o.__module__ + "." + o.__name__
+                '$function': o.__module__ + "." + getattr(o, "__name__", type(o).__name__)
             }
+        if isinstance(o, np.ndarray):
+            return o.tolist()
         return json.JSONEncoder.default(self, o)
 
 

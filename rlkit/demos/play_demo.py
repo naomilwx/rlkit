@@ -2,7 +2,7 @@ import numpy as np
 
 import sys
 # print(sys.path)
-sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
+#sys.path.remove("/opt/ros/kinetic/lib/python2.7/dist-packages")
 
 import cv2
 import sys

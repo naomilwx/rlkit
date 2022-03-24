@@ -5,7 +5,7 @@ channels:
 - anaconda  # for mkl
 dependencies:
 - cython
-- ipython  # technically unnecessary
+# - ipython  # technically unnecessary
 - joblib=0.9.4
 - lockfile
 - mako=1.0.6=py35_0
@@ -20,10 +20,15 @@ dependencies:
 - pytorch-cpu=0.4.1
 - scipy=1.0.1
 - patchelf
+- imageio
+- pip
 - pip:
+  - glfw
+  - parso==0.7.1
   - cloudpickle==0.5.2
   - gym[all]==0.10.5
   - gitpython==2.1.7
   - gtimer==1.0.0b5
   - pygame==1.9.2
-  - ipdb  # technically unnecessary
+  - torchvision
+  # - ipdb  # technically unnecessary
