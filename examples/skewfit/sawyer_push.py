@@ -34,7 +34,7 @@ if __name__ == "__main__":
             max_path_length=50,
             algo_kwargs=dict(
                 batch_size=1024,
-                num_epochs=1000,
+                num_epochs=500, # Testing. was 1000
                 num_eval_steps_per_epoch=500,
                 num_expl_steps_per_train_loop=500,
                 num_trains_per_train_loop=1000,
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     decoder_distribution='gaussian_identity_variance',
                     num_latents_to_sample=10,
                 ),
-                power=-1,
+                power=-0.5,
                 relabeling_goal_sampling_mode='vae_prior',
             ),
             exploration_goal_sampling_mode='vae_prior',
@@ -106,13 +106,13 @@ if __name__ == "__main__":
             ),
             # TODO: why the redundancy?
             algo_kwargs=dict(
-                start_skew_epoch=5000,
+                start_skew_epoch=50, # was 5000
                 is_auto_encoder=False,
                 batch_size=64,
                 lr=1e-3,
                 skew_config=dict(
                     method='vae_prob',
-                    power=-1,
+                    power=-0.5,
                 ),
                 skew_dataset=True,
                 priority_function_kwargs=dict(
@@ -137,11 +137,12 @@ if __name__ == "__main__":
         __file__.replace('/', '-').replace('_', '-').split('.')[0]
     )
 
-    n_seeds = 3
+    n_seeds = 1
     mode = 'ec2'
-    exp_prefix = 'rlkit-skew-fit-pusher-reference-sample-from-true-prior-take2'
+    exp_prefix = 'rlkit-skew-fit-pusher-sample-from-true-prior'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
+        print('exp id:', exp_id)
         for _ in range(n_seeds):
             run_experiment(
                 skewfit_full_experiment,
@@ -149,7 +150,7 @@ if __name__ == "__main__":
                 mode=mode,
                 variant=variant,
                 use_gpu=True,
-                num_exps_per_instance=3,
+                num_exps_per_instance=1,
                 gcp_kwargs=dict(
                     terminate=True,
                     zone='us-east1-c',
