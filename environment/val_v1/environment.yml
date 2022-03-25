@@ -64,17 +64,17 @@ dependencies:
     - argcomplete==1.12.2
     - astor==0.8.1
     - attrs==19.3.0
-    - azure-cli-core==2.11.1
-    - azure-cli-telemetry==1.0.6
-    - azure-common==1.1.26
-    - azure-core==1.9.0
-    - azure-mgmt-authorization==0.61.0
-    - azure-mgmt-compute==13.0.0
-    - azure-mgmt-core==1.2.0
-    - azure-mgmt-network==11.0.0
-    - azure-mgmt-resource==10.2.0
-    - azure-mgmt-storage==11.2.0
-    - azure-storage-blob==12.4.0
+    # - azure-cli-core==2.11.1
+    # - azure-cli-telemetry==1.0.6
+    # - azure-common==1.1.26
+    # - azure-core==1.9.0
+    # - azure-mgmt-authorization==0.61.0
+    # - azure-mgmt-compute==13.0.0
+    # - azure-mgmt-core==1.2.0
+    # - azure-mgmt-network==11.0.0
+    # - azure-mgmt-resource==10.2.0
+    # - azure-mgmt-storage==11.2.0
+    # - azure-storage-blob==12.4.0
     - bcrypt==3.2.0
     - bleach==3.1.4
     - boto3==1.11.1

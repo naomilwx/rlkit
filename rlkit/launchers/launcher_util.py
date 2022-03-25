@@ -265,6 +265,11 @@ def setup_logger(
     if first_time:
         log_dir = create_log_dir(exp_prefix, **create_log_dir_kwargs)
 
+    logger_variant = variant.get("logger_variant", dict())
+    if logger_variant.get("tensorboard", False):
+        tensorboard_log_path = osp.join(log_dir, "tensorboard")
+        logger.add_tensorboard_output(tensorboard_log_path)
+
     if variant is not None:
         logger.log("Variant:")
         logger.log(json.dumps(dict_to_safe_json(variant), indent=2))

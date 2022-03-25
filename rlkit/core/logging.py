@@ -16,9 +16,9 @@ import json
 import pickle
 import errno
 import torch
+from collections import OrderedDict
 
 from rlkit.core.tabulate import tabulate
-from collections import OrderedDict
 
 def add_prefix(log_dict: OrderedDict, prefix: str, divider=''):
     with_prefix = OrderedDict()
@@ -26,12 +26,10 @@ def add_prefix(log_dict: OrderedDict, prefix: str, divider=''):
         with_prefix[prefix + divider + key] = val
     return with_prefix
 
-
 def append_log(log_dict, to_add_dict, prefix=None):
     if prefix is not None:
         to_add_dict = add_prefix(to_add_dict, prefix=prefix)
     return log_dict.update(to_add_dict)
-
 
 class TerminalTablePrinter(object):
     def __init__(self):
@@ -91,10 +89,10 @@ class Logger(object):
         self._tabular_prefix_str = ''
 
         self._tabular = []
-        self._tabular_keys = {}
 
         self._text_outputs = []
         self._tabular_outputs = []
+        self._tabular_keys = {}
 
         self._text_fds = {}
         self._tabular_fds = {}
@@ -107,6 +105,9 @@ class Logger(object):
         self._log_tabular_only = False
         self._header_printed = False
         self.table_printer = TerminalTablePrinter()
+
+        self._use_tensorboard = False
+        self.epoch = 0
 
     def reset(self):
         self.__init__()
@@ -126,6 +127,11 @@ class Logger(object):
     def push_prefix(self, prefix):
         self._prefixes.append(prefix)
         self._prefix_str = ''.join(self._prefixes)
+
+    def add_tensorboard_output(self, file_name):
+        import tensorboard_logger
+        self._use_tensorboard = True
+        self.tensorboard_logger = tensorboard_logger.Logger(file_name)
 
     def add_text_output(self, file_name):
         self._add_output(file_name, self._text_outputs, self._text_fds,
@@ -190,6 +196,8 @@ class Logger(object):
 
     def record_tabular(self, key, val):
         self._tabular.append((self._tabular_prefix_str + str(key), str(val)))
+        if self._use_tensorboard:
+            self.tensorboard_logger.log_value(self._tabular_prefix_str + str(key), val, self.epoch)
 
     def record_dict(self, d, prefix=None):
         if prefix is not None:
@@ -273,6 +281,7 @@ class Logger(object):
             self.record_tabular(prefix + "Max" + suffix, np.nan)
 
     def dump_tabular(self, *args, **kwargs):
+        self.epoch += 1
         wh = kwargs.pop("write_header", None)
         if len(self._tabular) > 0:
             if self._log_tabular_only:
@@ -338,4 +347,3 @@ class Logger(object):
 
 
 logger = Logger()
-
