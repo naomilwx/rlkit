@@ -228,6 +228,7 @@ class SACTrainer(TorchTrainer, LossFunction):
         return loss, eval_statistics
 
     def get_diagnostics(self):
+        print('num train calls', self._n_train_steps_total)
         stats = super().get_diagnostics()
         stats.update(self.eval_statistics)
         return stats

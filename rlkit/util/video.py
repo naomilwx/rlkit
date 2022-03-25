@@ -8,6 +8,41 @@ import skvideo.io
 
 from rlkit.envs.vae_wrapper import VAEWrappedEnv
 
+class VideoSaveFunction:
+    def __init__(self, env, variant):
+        self.logdir = logger.get_snapshot_dir()
+        self.dump_video_kwargs = variant.get("dump_video_kwargs", dict())
+        if 'imsize' not in self.dump_video_kwargs:
+            self.dump_video_kwargs['imsize'] = env.imsize
+        self.dump_video_kwargs.setdefault("rows", 2)
+        self.dump_video_kwargs.setdefault("columns", 5)
+        self.dump_video_kwargs.setdefault("unnormalize", True)
+        self.save_period = self.dump_video_kwargs.pop('save_video_period', 50)
+        self.exploration_goal_image_key = self.dump_video_kwargs.pop("exploration_goal_image_key", "decoded_goal_image")
+        self.evaluation_goal_image_key = self.dump_video_kwargs.pop("evaluation_goal_image_key", "image_desired_goal")
+
+    def __call__(self, algo, epoch):
+        expl_data_collector = algo.expl_data_collector
+        expl_paths = expl_data_collector.get_epoch_paths()
+        if epoch % self.save_period == 0 or epoch == algo.num_epochs:
+            filename = osp.join(self.logdir, 'video_{epoch}_vae.mp4'.format(epoch=epoch))
+            dump_paths(algo.expl_env,
+                filename,
+                expl_paths,
+                self.exploration_goal_image_key,
+                **self.dump_video_kwargs,
+            )
+
+        eval_path_collector = algo.eval_data_collector
+        eval_paths = eval_path_collector.get_epoch_paths()
+        if epoch % self.save_period == 0 or epoch == algo.num_epochs:
+            filename = osp.join(self.logdir, 'video_{epoch}_env.mp4'.format(epoch=epoch))
+            dump_paths(algo.eval_env,
+                filename,
+                eval_paths,
+                self.evaluation_goal_image_key,
+                **self.dump_video_kwargs,
+            )
 
 def dump_video(
         env,

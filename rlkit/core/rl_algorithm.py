@@ -20,7 +20,6 @@ def _get_epoch_timings():
     times['time/total (s)'] = gt.get_times().total
     return times
 
-
 class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
     def __init__(
             self,
@@ -30,6 +29,7 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
             exploration_data_collector: DataCollector,
             evaluation_data_collector: DataCollector,
             replay_buffer: ReplayBuffer,
+            num_epochs,
     ):
         self.trainer = trainer
         self.expl_env = exploration_env
@@ -38,8 +38,10 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self.eval_data_collector = evaluation_data_collector
         self.replay_buffer = replay_buffer
         self._start_epoch = 0
-
+        self.post_train_funcs = []
         self.post_epoch_funcs = []
+        self.epoch = self._start_epoch
+        self.num_epochs = num_epochs
 
     def train(self, start_epoch=0):
         self._start_epoch = start_epoch

@@ -7,6 +7,8 @@ from rlkit.torch import pytorch_util as ptu
 import numpy as np
 from rlkit.torch.conv_networks import CNN, DCNN
 from rlkit.torch.vae.vae_base import GaussianLatentVAE
+from rlkit.torch.networks.dcnn import TwoHeadDCNN
+from rlkit.torch.vae.vae_base import compute_gaussian_log_prob
 
 ###### DEFAULT ARCHITECTURES #########
 
@@ -244,3 +246,200 @@ class ConvVAE(GaussianLatentVAE):
         else:
             raise NotImplementedError('Distribution {} not supported'.format(
                 self.decoder_distribution))
+
+class ConvDynamicsVAE(ConvVAE):
+    def __init__(
+            self,
+            representation_size,
+            architecture,
+            action_dim,
+            encoder_class=CNN,
+            decoder_class=DCNN,
+            decoder_output_activation=identity,
+            decoder_distribution='bernoulli',
+            input_channels=1,
+            imsize=48,
+            dynamics_type=None,
+            init_w=1e-3,
+            min_variance=1e-3,
+            hidden_init=ptu.fanin_init,
+    ):
+
+        super().__init__(
+            representation_size,
+            architecture,
+            encoder_class,
+            decoder_class,
+            decoder_output_activation,
+            decoder_distribution,
+            input_channels,
+            imsize,
+            init_w,
+            min_variance,
+            hidden_init)
+
+        self.action_dim = action_dim
+        self.dynamics_type = dynamics_type
+
+        self.globally_linear = nn.Linear(representation_size + self.action_dim, representation_size)
+
+        self.locally_linear_f1 = nn.Linear(representation_size, 400)
+        self.locally_linear_f2 = nn.Linear(400, (representation_size + self.action_dim) * representation_size)
+
+        self.nonlinear_dynamics_f1 = nn.Linear(representation_size + self.action_dim, 400)
+        self.nonlinear_dynamics_f2 = nn.Linear(400, representation_size)
+
+        self.globally_linear.weight.data.uniform_(-init_w, init_w)
+
+        self.locally_linear_f1.weight.data.uniform_(-init_w, init_w)
+        self.locally_linear_f1.bias.data.uniform_(-init_w, init_w)
+
+        self.locally_linear_f2.weight.data.uniform_(-init_w, init_w)
+        self.locally_linear_f2.bias.data.uniform_(-init_w, init_w)
+
+        self.nonlinear_dynamics_f1.weight.data.uniform_(-init_w, init_w)
+        self.nonlinear_dynamics_f1.bias.data.uniform_(-init_w, init_w)
+
+        self.nonlinear_dynamics_f2.weight.data.uniform_(-init_w, init_w)
+        self.nonlinear_dynamics_f2.bias.data.uniform_(-init_w, init_w)
+
+
+    def process_dynamics(self, latents, actions):
+        if self.dynamics_type == 'global':
+            return self.global_linear_dynamics(latents, actions)
+        if self.dynamics_type == 'local':
+            return self.local_linear_dynamics(latents, actions)
+        if self.dynamics_type == 'nonlinear':
+            return self.nonlinear_dynamics(latents, actions)
+
+    def global_linear_dynamics(self, latents, actions):
+        action_obs_pair = torch.cat([latents, actions], dim=1)
+        z_prime = self.globally_linear(action_obs_pair)
+        return z_prime
+
+    def local_linear_dynamics(self, latents, actions):
+        output = self.locally_linear_f2(F.relu(self.locally_linear_f1(latents)))
+        dynamics = output.view(latents.shape[0], self.representation_size, self.representation_size + self.action_dim)
+
+        z_prime = ptu.zeros_like(latents)
+        action_obs_pair = torch.cat([latents, actions], dim=1)
+        for i in range(latents.shape[0]):
+            z_prime[i] = torch.matmul(dynamics[i], action_obs_pair[i])
+        return z_prime
+
+    def nonlinear_dynamics(self, latents, actions):
+        action_obs_pair = torch.cat([latents, actions], dim=1)
+        z_prime = self.nonlinear_dynamics_f2(F.relu(self.nonlinear_dynamics_f1(action_obs_pair)))
+        return z_prime
+
+
+class ConvVAEDouble(ConvVAE):
+    def __init__(
+            self,
+            representation_size,
+            architecture,
+
+            encoder_class=CNN,
+            decoder_class=TwoHeadDCNN,
+            decoder_output_activation=identity,
+            decoder_distribution='gaussian',
+
+            input_channels=1,
+            imsize=48,
+            init_w=1e-3,
+            min_variance=1e-4,
+            hidden_init=ptu.fanin_init,
+            min_log_clamp=0,
+    ):
+        super().__init__(
+            representation_size,
+            architecture,
+
+            encoder_class=encoder_class,
+            decoder_class=decoder_class,
+            decoder_output_activation=decoder_output_activation,
+            decoder_distribution=decoder_distribution,
+
+            input_channels=input_channels,
+            imsize=imsize,
+            init_w=init_w,
+            min_variance=min_variance,
+            hidden_init=hidden_init,
+        )
+        self.min_log_var = min_log_clamp
+
+    def decode(self, latents):
+        first_output, second_output = self.decoder(latents)
+        first_output = first_output.view(-1, self.imsize*self.imsize*self.input_channels)
+        second_output = second_output.view(-1, self.imsize*self.imsize*self.input_channels)
+        if self.decoder_distribution == 'gaussian':
+            return first_output, (first_output, second_output)
+        else:
+            raise NotImplementedError('Distribution {} not supported'.format(self.decoder_distribution))
+
+    def logprob(self, inputs, obs_distribution_params):
+        if self.decoder_distribution == 'gaussian':
+            dec_mu, dec_logvar = obs_distribution_params
+            dec_mu = dec_mu.view(-1, self.imlength)
+            dec_var = dec_logvar.view(-1, self.imlength).exp()
+            inputs = inputs.view(-1, self.imlength)
+            log_prob = compute_gaussian_log_prob(inputs, dec_mu, dec_var)
+            return log_prob
+        else:
+            raise NotImplementedError('Distribution {} not supported'.format(self.decoder_distribution))
+
+class AutoEncoder(ConvVAE):
+    def forward(self, x):
+        mu, logvar = self.encode(input)
+        reconstructions, obs_distribution_params = self.decode(mu)
+        return reconstructions, obs_distribution_params, (mu, logvar)
+
+
+class SpatialAutoEncoder(ConvVAE):
+    def __init__(
+            self,
+            representation_size,
+            *args,
+            conv_output_dimension=7,
+            temperature=1.0,
+            **kwargs
+    ):
+        super().__init__(representation_size, *args, **kwargs)
+        num_feat_points = representation_size // 2
+        assert self.architecture["conv_args"]["n_channels"][-1] == num_feat_points
+
+        self.conv_output_dimension = conv_output_dimension
+
+        self.weights = ptu.from_numpy(
+            (np.arange(self.conv_output_dimension) + 0.5)
+            / self.conv_output_dimension
+        )
+
+        self.fc1 = nn.Linear(representation_size, representation_size)
+        self.fc2 = nn.Linear(representation_size, representation_size)
+
+        self.fc1.weight.data.uniform_(-self.init_w, self.init_w)
+        self.fc1.bias.data.uniform_(-self.init_w, self.init_w)
+
+        self.fc2.weight.data.uniform_(-self.init_w, self.init_w)
+        self.fc2.bias.data.uniform_(-self.init_w, self.init_w)
+
+        self.temperature = temperature
+
+    def encode(self, input):
+        h = self.encoder(input)
+
+        maps_x = torch.sum(h, 2)
+        maps_y = torch.sum(h, 3)
+
+        fp_x = torch.sum(maps_x * self.weights, 2)
+        fp_y = torch.sum(maps_y * self.weights, 2)
+
+        h = torch.cat([fp_x, fp_y], 1)
+
+        mu = self.fc1(h)
+        if self.log_min_variance is None:
+            logvar = self.fc2(h)
+        else:
+            logvar = self.log_min_variance + torch.abs(self.fc2(h))
+        return (mu, logvar)

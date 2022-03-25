@@ -129,7 +129,6 @@ def run_experiment_here(
         seed = random.randint(0, 100000)
         variant['seed'] = str(seed)
     reset_execution_environment()
-
     actual_log_dir = setup_logger(
         exp_prefix=exp_prefix,
         variant=variant,
@@ -186,7 +185,6 @@ def create_exp_name(exp_prefix, exp_id=0, seed=0):
     """
     now = datetime.datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
-    print('create_exp_name', exp_prefix, timestamp, exp_id, seed)
     return "%s_%s_%04d--s-%d" % (exp_prefix, timestamp, exp_id, seed)
 
 
@@ -535,7 +533,6 @@ def run_experiment(
     global gpu_ec2_okayed
     global target_mount
     global first_sss_launch
-
     """
     Sanitize inputs as needed
     """
