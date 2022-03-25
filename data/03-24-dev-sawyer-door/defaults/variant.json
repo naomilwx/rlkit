@@ -1,0 +1,159 @@
+{
+  "algorithm": "Skew-Fit-SAC",
+  "double_algo": false,
+  "env_id": "SawyerDoorHookResetFreeEnv-v1",
+  "exp_id": "0",
+  "exp_prefix": "03-24-dev-sawyer-door",
+  "imsize": 48,
+  "init_camera": {
+    "$function": "multiworld.envs.mujoco.cameras.sawyer_door_env_camera_v0"
+  },
+  "instance_type": "None",
+  "online_vae_exploration": false,
+  "seed": 70184,
+  "skewfit_variant": {
+    "algo_kwargs": {
+      "batch_size": 1024,
+      "min_num_steps_before_training": 10000,
+      "num_epochs": 170,
+      "num_eval_steps_per_epoch": 500,
+      "num_expl_steps_per_train_loop": 500,
+      "num_trains_per_train_loop": 1000,
+      "oracle_data": false,
+      "parallel_vae_train": false,
+      "vae_save_period": 50,
+      "vae_training_schedule": {
+        "$function": "rlkit.torch.vae.vae_schedules.custom_schedule"
+      }
+    },
+    "custom_goal_sampler": "replay_buffer",
+    "desired_goal_key": "latent_desired_goal",
+    "evaluation_goal_sampling_mode": "presampled",
+    "exploration_goal_sampling_mode": "custom_goal_sampler",
+    "max_path_length": 100,
+    "observation_key": "latent_observation",
+    "online_vae_trainer_kwargs": {
+      "beta": 20,
+      "lr": 0.001
+    },
+    "policy_kwargs": {
+      "hidden_sizes": [
+        400,
+        300
+      ]
+    },
+    "presample_goals": true,
+    "presampled_goals_path": "/home/naomilwx/anaconda3/envs/mjrl-env/lib/python3.7/site-packages/multiworld/envs/mujoco/goals/door_goals.npy",
+    "qf_kwargs": {
+      "hidden_sizes": [
+        400,
+        300
+      ]
+    },
+    "replay_buffer_kwargs": {
+      "exploration_rewards_type": "None",
+      "fraction_goals_env_goals": 0.5,
+      "fraction_goals_rollout_goals": 0.2,
+      "max_size": 100000,
+      "power": -0.5,
+      "priority_function_kwargs": {
+        "decoder_distribution": "gaussian_identity_variance",
+        "num_latents_to_sample": 10,
+        "sampling_method": "importance_sampling"
+      },
+      "relabeling_goal_sampling_mode": "custom_goal_sampler",
+      "start_skew_epoch": 10,
+      "vae_priority_type": "vae_prob"
+    },
+    "reward_params": {
+      "type": "latent_distance"
+    },
+    "save_video": true,
+    "save_video_period": 50,
+    "testing_mode": "test",
+    "training_mode": "train",
+    "twin_sac_trainer_kwargs": {
+      "discount": 0.99,
+      "reward_scale": 1,
+      "soft_target_tau": 0.001,
+      "target_update_period": 1,
+      "use_automatic_entropy_tuning": true
+    },
+    "vae_wrapped_env_kwargs": {
+      "sample_from_true_prior": true
+    }
+  },
+  "train_vae_variant": {
+    "algo_kwargs": {
+      "lr": 0.001
+    },
+    "beta": 20,
+    "decoder_activation": "gaussian",
+    "dump_skew_debug_plots": false,
+    "generate_vae_dataset_kwargs": {
+      "N": 2,
+      "n_random_steps": 1,
+      "non_presampled_goal_img_is_garbage": true,
+      "oracle_dataset": false,
+      "show": false,
+      "test_p": 0.9,
+      "use_cached": true
+    },
+    "num_epochs": 0,
+    "representation_size": 16,
+    "save_period": 1,
+    "vae_kwargs": {
+      "architecture": {
+        "conv_args": {
+          "kernel_sizes": [
+            5,
+            3,
+            3
+          ],
+          "n_channels": [
+            16,
+            32,
+            64
+          ],
+          "strides": [
+            3,
+            2,
+            2
+          ]
+        },
+        "conv_kwargs": {
+          "batch_norm_conv": false,
+          "batch_norm_fc": false,
+          "hidden_sizes": []
+        },
+        "deconv_args": {
+          "deconv_input_channels": 64,
+          "deconv_input_height": 3,
+          "deconv_input_width": 3,
+          "deconv_output_channels": 3,
+          "deconv_output_kernel_size": 6,
+          "deconv_output_strides": 3,
+          "hidden_sizes": [],
+          "kernel_sizes": [
+            3,
+            3
+          ],
+          "n_channels": [
+            32,
+            16
+          ],
+          "strides": [
+            2,
+            2
+          ]
+        },
+        "deconv_kwargs": {
+          "batch_norm_deconv": false,
+          "batch_norm_fc": false
+        }
+      },
+      "decoder_distribution": "gaussian_identity_variance",
+      "input_channels": 3
+    }
+  }
+}
