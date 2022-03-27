@@ -22,7 +22,9 @@ def train_vae(variant):
 def grill_her_td3_offpolicy_online_vae_full_experiment(variant):
     variant['grill_variant']['save_vae_data'] = True
     full_experiment_variant_preprocess(variant)
+    print('done preprocess')
     train_vae_and_update_variant(variant)
+    print('done train_vae_and_update_variant')
     grill_her_td3_experiment_offpolicy_online_vae(variant['grill_variant'])
 
 def grill_her_td3_experiment_offpolicy_online_vae(variant):
@@ -44,10 +46,10 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
 
     import gc
     gc.collect() # Ashvin: this line for a GPU memory error
-
+    print('running grill_her_td3_experiment_offpolicy_online_vae')
     grill_preprocess_variant(variant)
     env = get_envs(variant)
-
+    print('running grill_her_td3_experiment_offpolicy_online_vae')
     uniform_dataset_fn = variant.get('generate_uniform_dataset_fn', None)
     if uniform_dataset_fn:
         uniform_dataset=uniform_dataset_fn(
@@ -158,7 +160,21 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
         desired_goal_key=desired_goal_key,
     )
 
-    algorithm = OnlineVaeOffpolicyAlgorithm(
+    algorithm_class = variant.get("algorithm_class", OnlineVaeAlgorithm)
+    # algorithm = OnlineVaeOffpolicyAlgorithm(
+    #     trainer=trainer,
+    #     exploration_env=env,
+    #     evaluation_env=env,
+    #     exploration_data_collector=expl_path_collector,
+    #     evaluation_data_collector=eval_path_collector,
+    #     replay_buffer=replay_buffer,
+    #     vae=vae,
+    #     vae_trainer=vae_trainer,
+    #     uniform_dataset=uniform_dataset,
+    #     max_path_length=max_path_length,
+    #     **variant['algo_kwargs']
+    # )
+    algorithm = algorithm_class(
         trainer=trainer,
         exploration_env=env,
         evaluation_env=env,
@@ -184,5 +200,7 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
     algorithm.to(ptu.device)
     vae.to(ptu.device)
 
+    print('running pre-train')
     algorithm.pretrain()
+    print('running train')
     algorithm.train()
