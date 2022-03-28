@@ -90,7 +90,7 @@ class Logger(object):
 
         self._text_outputs = []
         self._tabular_outputs = []
-        self._tabular_keys = None
+        self._tabular_keys = {}
 
         self._text_fds = {}
         self._tabular_fds = {}
@@ -273,6 +273,7 @@ class Logger(object):
             self.record_tabular(prefix + "Min" + suffix, np.nan)
             self.record_tabular(prefix + "Max" + suffix, np.nan)
 
+   
     def dump_tabular(self, *args, **kwargs):
         self.epoch += 1
         wh = kwargs.pop("write_header", None)
@@ -283,16 +284,24 @@ class Logger(object):
                 for line in tabulate(self._tabular).split('\n'):
                     self.log(line, *args, **kwargs)
             tabular_dict = dict(self._tabular)
+            # Also write to the csv files
+            for filename, tabular_fd in list(self._tabular_fds.items()):
+                # Only saves keys in first iteration to CSV!
+                # (But every key is printed out in text)
+                itr0_keys = self._tabular_keys.get(filename)
+                if itr0_keys is None:
+                    itr0_keys = list(sorted(tabular_dict.keys()))
+                    self._tabular_keys[filename] = itr0_keys
+                else:
+                    prev_keys = set(itr0_keys)
+                    curr_keys = set(tabular_dict.keys())
+                    if curr_keys != prev_keys:
+                        print("Warning: CSV key mismatch")
+                        print("extra keys in 0th iter", prev_keys - curr_keys)
+                        print("extra keys in cur iter", curr_keys - prev_keys)
 
-            # Only saves keys in first iteration to CSV!
-            # (But every key is printed out in text)
-            if self._tabular_keys is None:
-                self._tabular_keys = list(sorted(tabular_dict.keys()))
-
-            # Write to the csv files
-            for tabular_fd in list(self._tabular_fds.values()):
                 writer = csv.DictWriter(tabular_fd,
-                                        fieldnames=self._tabular_keys,
+                                        fieldnames=itr0_keys,
                                         extrasaction="ignore",)
                 if wh or (
                         wh is None and tabular_fd not in self._tabular_header_written):

@@ -1,5 +1,5 @@
 import rlkit.util.hyperparameter as hyp
-from multiworld.envs.mujoco.cameras import sawyer_init_camera_zoomed_in, sawyer_pusher_camera_upright_v2
+from multiworld.envs.mujoco.cameras import sawyer_init_camera_zoomed_in
 from rlkit.launchers.launcher_util import run_experiment
 import rlkit.torch.vae.vae_schedules as vae_schedules
 from rlkit.torch.vae.conv_vae import imsize48_default_architecture, imsize48_default_architecture_with_more_hidden_layers
@@ -115,7 +115,8 @@ if __name__ == "__main__":
             vae_wrapped_env_kwargs=dict(
                 sample_from_true_prior=True,
             ),
-            algorithm='ONLINE-VAE-SAC-BERNOULLI',
+            # algorithm='ONLINE-VAE-SAC-BERNOULLI',
+            vae_trainer_class=DeltaCVAETrainer,
             #vae_path="/home/ashvin/data/sasha/cond-rig/hyp-tuning/dropout/run12/id0/vae.pkl",
         ),
         train_vae_variant=dict(
@@ -126,13 +127,12 @@ if __name__ == "__main__":
                 y_values=(1, 100),
             ),
             context_schedule=1,
-            num_epochs=1500,
+            num_epochs=300, # was 1500
             dump_skew_debug_plots=False,
             decoder_activation='sigmoid',
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
-                N=100000,
-                # dataset_path="/home/ashvin/Desktop/sim_puck_data.npy",
+                N=10000,
                 n_random_steps=10,
                 test_p=.9,
                 use_cached=False,
@@ -156,13 +156,13 @@ if __name__ == "__main__":
             ),
 
             algo_kwargs=dict(
-                start_skew_epoch=5000,
+                start_skew_epoch=100,
                 is_auto_encoder=False,
                 batch_size=128,
                 lr=1e-3, #1E-4
                 skew_config=dict(
                     method='vae_prob',
-                    power=0,
+                    power=-1,
                 ),
                 weight_decay=1e-3,
                 skew_dataset=False,
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
             save_period=25,
         ),
-        region='us-west-2',
+        # region='us-west-2',
 
         logger_variant=dict(
             tensorboard=True,
@@ -202,8 +202,8 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 5
-    mode = 'ec2'
+    n_seeds = 3
+    mode = 'local'
     exp_prefix = 'ccrig-pusher'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
@@ -213,6 +213,6 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                region='us-west-2',
+                # region='us-west-2',
                 use_gpu=True,
           )

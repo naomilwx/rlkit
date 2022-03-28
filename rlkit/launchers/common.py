@@ -297,6 +297,7 @@ def generate_vae_dataset(variant):
                 dataset = np.zeros((N, imsize * imsize * num_channels), dtype=np.uint8)
             labels = []
             for i in range(N):
+                print(i, 'out of ', N)
                 if random_and_oracle_policy_data:
                     num_random_steps = int(N*random_and_oracle_policy_data_split)
                     if i < num_random_steps:

@@ -58,6 +58,7 @@ class VAEWrappedEnv(ProxyEnv, MultitaskEnv):
         self.imsize = imsize
         self.reward_params = reward_params
         self.reward_type = self.reward_params.get("type", 'latent_distance')
+        print('reward type', self.reward_type)
         self.norm_order = self.reward_params.get("norm_order", norm_order)
         self.epsilon = self.reward_params.get("epsilon", epsilon)
         self.reward_min_variance = self.reward_params.get("min_variance", 0)
@@ -224,7 +225,6 @@ class VAEWrappedEnv(ProxyEnv, MultitaskEnv):
         reward = self.compute_rewards(actions, next_obs)
         return reward[0]
 
-
     def compute_rewards(self, actions, obs):
         self.vae.eval()
         # TODO: implement log_prob/mdist
@@ -241,18 +241,16 @@ class VAEWrappedEnv(ProxyEnv, MultitaskEnv):
             achieved_goals = obs['latent_achieved_goal']
             desired_goals = obs['latent_desired_goal']
             dist = np.linalg.norm(desired_goals - achieved_goals, ord=self.norm_order, axis=1)
-            reward = 0 if dist < self.epsilon else -1
-            return reward
-        elif self.reward_type == 'success_prob':
-            desired_goals = self._decode(obs['latent_desired_goal'])
-            achieved_goals = self.vae.decode(ptu.from_numpy(obs['latent_achieved_goal']))
-            prob = self.vae.logprob(desired_goals, achieved_goals).exp()
-            reward = prob
-            return 1/0 #not sure about this anymore, number will be too low
+            return np.array([0.0 if d < self.epsilon else -1.0 for d in dist])
         elif self.reward_type == 'state_distance':
             achieved_goals = obs['state_achieved_goal']
             desired_goals = obs['state_desired_goal']
             return - np.linalg.norm(desired_goals - achieved_goals, ord=self.norm_order, axis=1)
+        elif self.reward_type == 'goal_achieved':
+            achieved_goals = obs['latent_achieved_goal']
+            desired_goals = obs['latent_desired_goal']
+            dist = np.linalg.norm(desired_goals - achieved_goals, ord=self.norm_order, axis=1)
+            return np.array([1.0 if d < self.epsilon else 0.0 for d in dist])
         elif self.reward_type == 'wrapped_env':
             return self.wrapped_env.compute_rewards(actions, obs)
         else:

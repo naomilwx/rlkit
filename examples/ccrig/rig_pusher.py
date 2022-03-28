@@ -132,7 +132,7 @@ if __name__ == "__main__":
             decoder_activation='sigmoid',
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
-                N=100000,
+                N=10000,
                 # dataset_path="/home/ashvin/Desktop/sim_puck_data.npy",
                 n_random_steps=10,
                 test_p=.9,
@@ -157,13 +157,13 @@ if __name__ == "__main__":
             ),
             # TODO: why the redundancy?
             algo_kwargs=dict(
-                start_skew_epoch=5000,
+                start_skew_epoch=100,
                 is_auto_encoder=False,
                 batch_size=32,
                 lr=1e-3,
                 skew_config=dict(
                     method='vae_prob',
-                    power=0,
+                    power=-1,
                 ),
                 skew_dataset=False,
                 priority_function_kwargs=dict(
@@ -177,8 +177,6 @@ if __name__ == "__main__":
 
             save_period=25,
         ),
-        region='us-west-2',
-
         logger_variant=dict(
             tensorboard=True,
         ),
@@ -193,7 +191,7 @@ if __name__ == "__main__":
     )
 
     n_seeds = 5
-    mode = 'ec2'
+    mode = 'local'
     exp_prefix = 'rig-pusher'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):

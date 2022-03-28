@@ -124,6 +124,7 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
     replay_buffer.representation_size = vae.representation_size
 
     vae_trainer_class = variant.get("vae_trainer_class", ConvVAETrainer)
+    print('vae_trainer_class', vae_trainer_class.__name__)
     vae_trainer = vae_trainer_class(
         env.vae,
         **variant['online_vae_trainer_kwargs']

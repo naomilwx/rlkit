@@ -44,6 +44,7 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self.post_epoch_funcs = []
         self.epoch = self._start_epoch
         self.num_epochs = num_epochs
+        print('init BaseRLAlgorithm')
 
     def train(self):
         timer.return_global_times = True
@@ -97,6 +98,7 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
                    prefix='replay_buffer/')
         append_log(algo_log, self.trainer.get_diagnostics(), prefix='trainer/')
         # Exploration
+        print('expl diagnostics',self.expl_data_collector.get_diagnostics())
         append_log(algo_log, self.expl_data_collector.get_diagnostics(),
                    prefix='exploration/')
         expl_paths = self.expl_data_collector.get_epoch_paths()
