@@ -325,7 +325,7 @@ def generate_vae_dataset(variant):
                     u = policy.get_action_from_raw_action(env.action_space.sample())
                     env.step(u)
                 elif oracle_dataset_using_set_to_goal:
-                    print(i)
+                    print('oracle dataset', i)
                     goal = env.sample_goal()
                     env.set_to_goal(goal)
                     obs = env._get_obs()

@@ -47,7 +47,7 @@ if __name__ == "__main__":
         ),
 
         grill_variant=dict(
-            save_video=True,
+            save_video=False,
             custom_goal_sampler='replay_buffer',
             online_vae_trainer_kwargs=dict(
                 beta=20,
@@ -63,14 +63,15 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=100,
+            # max_path_length=100,
+            max_path_length=20,
             algo_kwargs=dict(
                 batch_size=128,
-                num_epochs=1001,
+                num_epochs=200,
                 num_eval_steps_per_epoch=1000,
                 num_expl_steps_per_train_loop=1000,
                 num_trains_per_train_loop=1000,
-                min_num_steps_before_training=4000,
+                min_num_steps_before_training=1000, # was 4000
                 vae_training_schedule=vae_schedules.never_train,
                 oracle_data=False,
                 vae_save_period=25,
@@ -120,7 +121,7 @@ if __name__ == "__main__":
             #vae_path="/home/ashvin/data/sasha/cond-rig/hyp-tuning/dropout/run12/id0/vae.pkl",
         ),
         train_vae_variant=dict(
-            latent_sizes=4,
+            latent_sizes=(4, 4),
             beta=10,
             beta_schedule_kwargs=dict(
                 x_values=(0, 1000),
@@ -158,7 +159,7 @@ if __name__ == "__main__":
             algo_kwargs=dict(
                 start_skew_epoch=100,
                 is_auto_encoder=False,
-                batch_size=128,
+                batch_size=32, # was 128
                 lr=1e-3, #1E-4
                 skew_config=dict(
                     method='vae_prob',
@@ -183,21 +184,22 @@ if __name__ == "__main__":
         ),
     )
 
-    search_space = {
-        'train_vae_variant.latent_sizes': [(6, 4),],
-        'train_vae_variant.context_schedule': [
-            1.0,
-        ],
-        'train_vae_variant.beta_schedule_kwargs': [
-            dict(x_values=(0, 1500,), y_values=(1, 50)),
-        ],
-        'train_vae_variant.algo_kwargs.batch_size': [128, ],
-        'train_vae_variant.algo_kwargs.lr': [1e-4, ],
-        'train_vae_variant.algo_kwargs.weight_decay': [1e-4, ],
-        'grill_variant.algo_kwargs.num_trains_per_train_loop':[1000,],
-        'grill_variant.algo_kwargs.batch_size': [128,],
-        'grill_variant.exploration_noise': [0.3],
-    }
+    # search_space = {
+    #     'train_vae_variant.latent_sizes': [(6, 4),],
+    #     'train_vae_variant.context_schedule': [
+    #         1.0,
+    #     ],
+    #     'train_vae_variant.beta_schedule_kwargs': [
+    #         dict(x_values=(0, 1500,), y_values=(1, 50)),
+    #     ],
+    #     'train_vae_variant.algo_kwargs.batch_size': [128, ],
+    #     'train_vae_variant.algo_kwargs.lr': [1e-4, ],
+    #     'train_vae_variant.algo_kwargs.weight_decay': [1e-4, ],
+    #     'grill_variant.algo_kwargs.num_trains_per_train_loop':[1000,],
+    #     'grill_variant.algo_kwargs.batch_size': [128,],
+    #     'grill_variant.exploration_noise': [0.3],
+    # }
+    search_space = {}
     sweeper = hyp.DeterministicHyperparameterSweeper(
         search_space, default_parameters=variant,
     )

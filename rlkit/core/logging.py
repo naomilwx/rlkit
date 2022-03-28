@@ -52,7 +52,6 @@ class TerminalTablePrinter(object):
         sys.stdout.write(tabulate(tabulars, self.headers))
         sys.stdout.write("\n")
 
-
 class MyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, type):
@@ -63,8 +62,10 @@ class MyEncoder(json.JSONEncoder):
             }
         elif callable(o):
             return {
-                '$function': o.__module__ + "." + o.__name__
+                '$function': o.__module__ + "." + getattr(o, "__name__", type(o).__name__)
             }
+        if isinstance(o, np.ndarray):
+            return o.tolist()
         return json.JSONEncoder.default(self, o)
 
 

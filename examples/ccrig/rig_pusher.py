@@ -68,7 +68,7 @@ if __name__ == "__main__":
             max_path_length=20,
             algo_kwargs=dict(
                 batch_size=128,
-                num_epochs=501,
+                num_epochs=100,
                 num_eval_steps_per_epoch=1000,
                 num_expl_steps_per_train_loop=1000,
                 num_trains_per_train_loop=1000,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
                 max_size=int(100000),
                 fraction_goals_rollout_goals=0.2,
                 fraction_goals_env_goals=0.5,
-                exploration_rewards_type='None',
+                # exploration_rewards_type='None',
                 vae_priority_type='vae_prob',
                 priority_function_kwargs=dict(
                     sampling_method='importance_sampling',
@@ -120,13 +120,12 @@ if __name__ == "__main__":
             vae_wrapped_env_kwargs=dict(
                 sample_from_true_prior=True,
             ),
-            algorithm='ONLINE-VAE-SAC-BERNOULLI',
             # vae_path="datasets/pointmass/vae_pointmass_wall3.pkl",
         ),
         train_vae_variant=dict(
             latent_sizes=(4, 4),
             beta=10,
-            num_epochs=10,
+            num_epochs=300,
             dump_skew_debug_plots=False,
             # decoder_activation='gaussian',
             decoder_activation='sigmoid',
@@ -157,7 +156,7 @@ if __name__ == "__main__":
             ),
             # TODO: why the redundancy?
             algo_kwargs=dict(
-                start_skew_epoch=100,
+                start_skew_epoch=10,
                 is_auto_encoder=False,
                 batch_size=32,
                 lr=1e-3,
@@ -201,6 +200,5 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                region='us-west-2',
                 use_gpu=True,
           )
