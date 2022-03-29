@@ -19,6 +19,8 @@ class CLearningTrainer(TorchTrainer):
             target_qf1,
             target_qf2,
             target_policy,
+            target_policy_noise=0.2,
+            target_policy_noise_clip=0.5,
 
             discount=0.99,
             reward_scale=1.0,
@@ -66,6 +68,9 @@ class CLearningTrainer(TorchTrainer):
         self._need_to_update_eval_statistics = True
         self.batch_size = batch_size
 
+        self.target_policy_noise = target_policy_noise
+        self.target_policy_noise_clip = target_policy_noise_clip
+
     def train_from_torch(self, batch):
         """
         Critic operations.
@@ -106,12 +111,8 @@ class CLearningTrainer(TorchTrainer):
         critic_loss.backward()
         self.qf2_optimizer.step()
 
-        # policy_actions = policy_loss = None
         if self._n_train_steps_total % self.policy_and_target_update_period == 0:
             policy_loss = self.policy_loss(batch)
-            # policy_actions = self.policy(obs)
-            # q_output = self.qf1(obs, policy_actions)
-            # policy_loss = - q_output.mean()
 
             self.policy_optimizer.zero_grad()
             policy_loss.backward()
@@ -164,10 +165,7 @@ class CLearningTrainer(TorchTrainer):
             target_policy=self.target_policy,
         )
 
-    def critic_loss(self, batch,
-        w_clipping=20.0,
-        relabel_next_prob=0.5,
-        relabel_future_prob=0.0):
+    def critic_loss(self, batch, w_clipping=20.0):
         next_obs = batch['next_observations']
         rewards = batch['rewards']
         obs = batch['observations']
@@ -176,7 +174,16 @@ class CLearningTrainer(TorchTrainer):
         if w_clipping is None:
             w_clipping = 1 / (1 - self.reward_scale)
         
-        next_actions = self.target_policy(next_obs)    
+        next_actions = self.target_policy(next_obs)
+        if self.target_policy_noise > 0:
+            noise = ptu.randn(next_actions.shape) * self.target_policy_noise
+            noise = torch.clamp(
+                noise,
+                -self.target_policy_noise_clip,
+                self.target_policy_noise_clip
+            )
+            next_actions = next_actions + noise
+
         target_q1_values = self.target_qf1(next_obs, next_actions)
         target_q2_values = self.target_qf2(next_obs, next_actions)
         target_q_values = torch.min(target_q1_values, target_q2_values)
@@ -186,10 +193,10 @@ class CLearningTrainer(TorchTrainer):
         if w_clipping >= 0:
             w = torch.clamp(w, 0, w_clipping)
         
-        half_batch = self.batch_size // 2
-        float_batch_size = float(self.batch_size)
-        num_next = int(np.round(float_batch_size * relabel_next_prob))
-        num_future = int(np.round(float_batch_size * relabel_future_prob))
+        # half_batch = self.batch_size // 2
+        # float_batch_size = float(self.batch_size)
+        # num_next = int(np.round(float_batch_size * relabel_next_prob))
+        # num_future = int(np.round(float_batch_size * relabel_future_prob))
 
         # weights = torch.cat([torch.full((num_next,), (1 - self.reward_scale)),
         #                     torch.full((num_future,), 1.0),
@@ -199,9 +206,9 @@ class CLearningTrainer(TorchTrainer):
         y = self.reward_scale * w / (1 + self.reward_scale * w)
         td_targets = rewards + (1 - rewards) * y
         td_targets = td_targets.detach()
-        if relabel_future_prob > 0:
-            td_targets = np.concat([np.ones(half_batch),
-                                td_targets[half_batch:]], axis=0)
+        # if relabel_future_prob > 0:
+        #     td_targets = np.concat([np.ones(half_batch),
+        #                         td_targets[half_batch:]], axis=0)
 
         q1_pred = self.qf1(obs, actions)
         q2_pred = self.qf2(obs, actions)
@@ -209,9 +216,9 @@ class CLearningTrainer(TorchTrainer):
         qf2_loss = self.qf_criterion(q2_pred, td_targets)
         critic_loss = qf1_loss + qf2_loss
         
-        if len(critic_loss.shape) > 1:
-            # Sum over the time dimension.
-            critic_loss = torch.sum(critic_loss, dim=(1, len(critic_loss.shape) - 1))
+        # if len(critic_loss.shape) > 1:
+        #     # Sum over the time dimension.
+        #     critic_loss = torch.sum(critic_loss, dim=(1, len(critic_loss.shape) - 1))
 
         # TODO
         # agg_loss = common.aggregate_losses(
@@ -247,5 +254,5 @@ class CLearningTrainer(TorchTrainer):
         target_q_values = torch.min(target_q1_values, target_q2_values)
         policy_loss = -1.0 * target_q_values
 
-        policy_loss = torch.sum(policy_loss)
-        return policy_loss
+        # policy_loss = torch.sum(policy_loss)
+        return policy_loss.mean()

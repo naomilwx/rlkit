@@ -3,7 +3,6 @@ import torch
 from torch.utils.data import Dataset, Sampler
 
 from rlkit.data_management.images import normalize_image
-
 import rlkit.torch.pytorch_util as ptu
 
 class ImageDataset(Dataset):
@@ -82,7 +81,7 @@ class InfiniteWeightedRandomSampler(Sampler):
         return 2 ** 62
 
 
-class BatchLoader:
+class BatchLoader(object):
     def random_batch(self, batch_size):
         raise NotImplementedError
 

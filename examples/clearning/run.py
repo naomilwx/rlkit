@@ -10,7 +10,7 @@ from rlkit.torch.vae.conditional_vae_trainer import DeltaCVAETrainer
 from rlkit.data_management.online_conditional_vae_replay_buffer import \
         OnlineConditionalVaeRelabelingBuffer
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj_subset import SawyerMultiobjectEnv
+from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj import SawyerTwoObjectEnv
 from multiworld.envs.pygame.multiobject_pygame_env import Multiobj2DWallEnv
 
 x_var = 0.2 # determines size of the workspace
@@ -27,29 +27,11 @@ if __name__ == "__main__":
         imsize=48,
 
         init_camera=sawyer_init_camera_zoomed_in,
-        env_class=SawyerMultiobjectEnv,
-        env_kwargs=dict(
-            num_objects=1,
-            object_meshes=None,
-            fixed_start=True,
-            num_scene_objects=[1],
-            maxlen=0.1,
-            action_repeat=1,
-            puck_goal_low=(x_low + 0.01, y_low + 0.01),
-            puck_goal_high=(x_high - 0.01, y_high - 0.01),
-            hand_goal_low=(x_low + 3*t, y_low + t),
-            hand_goal_high=(x_high - 3*t, y_high -t),
-            mocap_low=(x_low + 2*t, y_low , 0.0),
-            mocap_high=(x_high - 2*t, y_high, 0.5),
-            object_low=(x_low + 0.01, y_low + 0.01, 0.02),
-            object_high=(x_high - 0.01, y_high - 0.01, 0.02),
-            use_textures=True,
-            init_camera=sawyer_init_camera_zoomed_in,
-            cylinder_radius=0.05,
-        ),
+        env_class=SawyerTwoObjectEnv,
+        env_kwargs=dict(),
 
         grill_variant=dict(
-            save_video=True,
+            save_video=False,
             custom_goal_sampler='replay_buffer',
             online_vae_trainer_kwargs=dict(
                 beta=20,
@@ -65,7 +47,7 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=20,
+            max_path_length=100,
             algo_kwargs=dict(
                 batch_size=128,
                 num_epochs=100,

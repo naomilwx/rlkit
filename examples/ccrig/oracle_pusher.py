@@ -27,10 +27,11 @@ from rlkit.launchers.launcher_util import run_experiment
 
 from multiworld.envs.pygame.multiobject_pygame_env import Multiobj2DWallEnv
 import rlkit.util.hyperparameter as hyp
+from rlkit.launchers.common import env_from_env_id
 
 def experiment(variant):
-    expl_env = variant['env_class'](**variant['env_kwargs'])
-    eval_env = variant['env_class'](**variant['env_kwargs'])
+    expl_env = env_from_env_id(variant['env_id']) if 'env_id' in variant else variant['env_class'](**variant['env_kwargs'])
+    eval_env = env_from_env_id(variant['env_id']) if 'env_id' in variant else variant['env_class'](**variant['env_kwargs'])
 
     observation_key = 'state_observation'
     desired_goal_key = 'state_desired_goal'
@@ -128,28 +129,30 @@ if __name__ == "__main__":
     y_high = 0.7
     t = 0.05
     variant = dict(
-        env_class=SawyerMultiobjectEnv,
-        env_kwargs=dict(
-            num_objects=1,
-            object_meshes=None,
-            fixed_start=True,
-            num_scene_objects=[1],
-            maxlen=0.1,
-            action_repeat=1,
-            puck_goal_low=(x_low + 0.01, y_low + 0.01),
-            puck_goal_high=(x_high - 0.01, y_high - 0.01),
-            hand_goal_low=(x_low + 3*t, y_low + t),
-            hand_goal_high=(x_high - 3*t, y_high -t),
-            mocap_low=(x_low + 2*t, y_low , 0.0),
-            mocap_high=(x_high - 2*t, y_high, 0.5),
-            object_low=(x_low + 0.01, y_low + 0.01, 0.02),
-            object_high=(x_high - 0.01, y_high - 0.01, 0.02),
-            use_textures=False,
-            cylinder_radius=0.05,
-        ),
+        env_id='SawyerPushNIPS-v0',
+        env_id='SawyerPushNIPSEasy-v0',
+        # env_class=SawyerMultiobjectEnv,
+        # env_kwargs=dict(
+        #     num_objects=1,
+        #     object_meshes=None,
+        #     fixed_start=True,
+        #     num_scene_objects=[1],
+        #     maxlen=0.1,
+        #     action_repeat=1,
+        #     puck_goal_low=(x_low + 0.01, y_low + 0.01),
+        #     puck_goal_high=(x_high - 0.01, y_high - 0.01),
+        #     hand_goal_low=(x_low + 3*t, y_low + t),
+        #     hand_goal_high=(x_high - 3*t, y_high -t),
+        #     mocap_low=(x_low + 2*t, y_low , 0.0),
+        #     mocap_high=(x_high - 2*t, y_high, 0.5),
+        #     object_low=(x_low + 0.01, y_low + 0.01, 0.02),
+        #     object_high=(x_high - 0.01, y_high - 0.01, 0.02),
+        #     use_textures=False,
+        #     cylinder_radius=0.05,
+        # ),
         algo_kwargs=dict(
-            num_epochs=501,
-            max_path_length=100,
+            num_epochs=500,
+            max_path_length=150,
             batch_size=128,
             num_eval_steps_per_epoch=1000,
             num_expl_steps_per_train_loop=1000,
@@ -170,7 +173,6 @@ if __name__ == "__main__":
         policy_kwargs=dict(
             hidden_sizes=[400, 300],
         ),
-        region='us-east-2',
     )
 
     search_space = {
@@ -179,13 +181,9 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 1
+    n_seeds = 2
     mode = 'local'
-    exp_prefix = 'debug'
-
-    n_seeds = 5
-    mode = 'ec2'
-    exp_prefix = 'oracle-pusher2'
+    exp_prefix = 'oracle-pusher'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
@@ -194,6 +192,5 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                region='us-west-2',
                 use_gpu=True,
           )

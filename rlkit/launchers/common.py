@@ -455,6 +455,12 @@ def generate_vae_dataset(variant):
         test_dataset = ImageObservationDataset(dataset[n:, :])
     return train_dataset, test_dataset, info
 
+def env_from_env_id(env_id):
+    import gym
+    import multiworld
+    multiworld.register_all_envs()
+    return gym.make(env_id)
+
 def get_envs(variant):
     from multiworld.core.image_env import ImageEnv
     from rlkit.envs.vae_wrapper import VAEWrappedEnv, ConditionalVAEWrappedEnv
@@ -471,10 +477,7 @@ def get_envs(variant):
     presampled_goals_path = variant.get('presampled_goals_path', None)
     vae = load_local_or_remote_file(vae_path) if type(vae_path) is str else vae_path
     if 'env_id' in variant:
-        import gym
-        import multiworld
-        multiworld.register_all_envs()
-        env = gym.make(variant['env_id'])
+        env = env_from_env_id(variant['env_id'])
     else:
         env = variant["env_class"](**variant['env_kwargs'])
     if not do_state_exp:

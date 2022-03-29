@@ -4,21 +4,12 @@ from rlkit.launchers.launcher_util import run_experiment
 import rlkit.torch.vae.vae_schedules as vae_schedules
 from rlkit.torch.vae.conv_vae import imsize48_default_architecture, imsize48_default_architecture_with_more_hidden_layers
 from rlkit.launchers.cvae_experiments import grill_her_td3_offpolicy_online_vae_full_experiment
-from rlkit.util.ml_util import PiecewiseLinearSchedule, ConstantSchedule
-from rlkit.torch.vae.conditional_conv_vae import DeltaCVAE
-from rlkit.torch.vae.conditional_vae_trainer import DeltaCVAETrainer
-from rlkit.data_management.online_conditional_vae_replay_buffer import \
-        OnlineConditionalVaeRelabelingBuffer
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj_subset import SawyerMultiobjectEnv
-from multiworld.envs.pygame.multiobject_pygame_env import Multiobj2DWallEnv
+# from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj import SawyerTwoObjectEnv
+# from multiworld.envs.pygame.multiobject_pygame_env import Multiobj2DWallEnv
 
-x_var = 0.2 # determines size of the workspace
-x_low = -x_var
-x_high = x_var
-y_low = 0.5
-y_high = 0.7
-t = 0.05 # border of the workspace for the hand
+# from examples.ccrig.env import default_multiobj_env
+# env, args = default_multiobj_env()
 
 if __name__ == "__main__":
     variant = dict(
@@ -27,29 +18,14 @@ if __name__ == "__main__":
         imsize=48,
 
         init_camera=sawyer_init_camera_zoomed_in,
-        env_class=SawyerMultiobjectEnv,
-        env_kwargs=dict(
-            num_objects=1,
-            object_meshes=None,
-            fixed_start=True,
-            num_scene_objects=[1],
-            maxlen=0.1,
-            action_repeat=1,
-            puck_goal_low=(x_low + 0.01, y_low + 0.01),
-            puck_goal_high=(x_high - 0.01, y_high - 0.01),
-            hand_goal_low=(x_low + 3*t, y_low + t),
-            hand_goal_high=(x_high - 3*t, y_high -t),
-            mocap_low=(x_low + 2*t, y_low , 0.0),
-            mocap_high=(x_high - 2*t, y_high, 0.5),
-            object_low=(x_low + 0.01, y_low + 0.01, 0.02),
-            object_high=(x_high - 0.01, y_high - 0.01, 0.02),
-            use_textures=True,
-            init_camera=sawyer_init_camera_zoomed_in,
-            cylinder_radius=0.05,
-        ),
+        # env_class=SawyerTwoObjectEnv,
+        # env_kwargs=dict(),
+        # env_class=env,
+        # env_kwargs=args,
+        env_id='SawyerPushNIPS-v0',
 
         grill_variant=dict(
-            save_video=True,
+            save_video=False,
             custom_goal_sampler='replay_buffer',
             online_vae_trainer_kwargs=dict(
                 beta=20,
@@ -65,7 +41,7 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=20,
+            max_path_length=100,
             algo_kwargs=dict(
                 batch_size=128,
                 num_epochs=100,
@@ -101,7 +77,7 @@ if __name__ == "__main__":
                     # decoder_distribution='bernoulli',
                     num_latents_to_sample=10,
                 ),
-                power=-1,
+                power=0,
                 relabeling_goal_sampling_mode='vae_prior',
             ),
             exploration_goal_sampling_mode='vae_prior',
@@ -162,7 +138,7 @@ if __name__ == "__main__":
                 lr=1e-3,
                 skew_config=dict(
                     method='vae_prob',
-                    power=-1,
+                    power=0,
                 ),
                 skew_dataset=False,
                 priority_function_kwargs=dict(
@@ -189,7 +165,7 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 5
+    n_seeds = 3
     mode = 'local'
     exp_prefix = 'rig-pusher'
 

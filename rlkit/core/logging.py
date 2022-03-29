@@ -20,10 +20,10 @@ from collections import OrderedDict
 
 from rlkit.core.tabulate import tabulate
 
-def add_prefix(log_dict: OrderedDict, prefix: str):
+def add_prefix(log_dict: OrderedDict, prefix: str, divider=''):
     with_prefix = OrderedDict()
     for key, val in log_dict.items():
-        with_prefix[prefix + key] = val
+        with_prefix[prefix + divider + key] = val
     return with_prefix
 
 def append_log(log_dict, to_add_dict, prefix=None):
@@ -52,6 +52,7 @@ class TerminalTablePrinter(object):
         sys.stdout.write(tabulate(tabulars, self.headers))
         sys.stdout.write("\n")
 
+
 class MyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, type):
@@ -66,7 +67,8 @@ class MyEncoder(json.JSONEncoder):
             }
         if isinstance(o, np.ndarray):
             return o.tolist()
-        return json.JSONEncoder.default(self, o)
+        return getattr(o, "__name__", type(o).__name__)
+        # return json.JSONEncoder.default(self, o)
 
 
 def mkdir_p(path):
@@ -144,6 +146,7 @@ class Logger(object):
             file_name = osp.join(self._snapshot_dir, file_name)
         self._add_output(file_name, self._tabular_outputs, self._tabular_fds,
                          mode='w')
+        self._tabular_keys[file_name] = None
 
     def remove_tabular_output(self, file_name, relative_to_snapshot_dir=False):
         if relative_to_snapshot_dir:
@@ -225,6 +228,10 @@ class Logger(object):
             joblib.dump(data, file_name, compress=3)
         elif mode == 'pickle':
             pickle.dump(data, open(file_name, "wb"))
+        elif mode == 'cloudpickle':
+            import cloudpickle
+            full_filename = file_name + ".cpkl"
+            cloudpickle.dump(data, open(full_filename, "wb"))
         else:
             raise ValueError("Invalid mode: {}".format(mode))
         return file_name
@@ -274,7 +281,6 @@ class Logger(object):
             self.record_tabular(prefix + "Min" + suffix, np.nan)
             self.record_tabular(prefix + "Max" + suffix, np.nan)
 
-   
     def dump_tabular(self, *args, **kwargs):
         self.epoch += 1
         wh = kwargs.pop("write_header", None)
@@ -342,4 +348,3 @@ class Logger(object):
 
 
 logger = Logger()
-
