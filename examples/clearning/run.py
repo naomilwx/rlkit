@@ -4,11 +4,6 @@ from rlkit.launchers.launcher_util import run_experiment
 import rlkit.torch.vae.vae_schedules as vae_schedules
 from rlkit.torch.vae.conv_vae import imsize48_default_architecture, imsize48_default_architecture_with_more_hidden_layers
 from rlkit.launchers.clearning_experiment import run_full_experiment
-from rlkit.util.ml_util import PiecewiseLinearSchedule, ConstantSchedule
-from rlkit.torch.vae.conditional_conv_vae import DeltaCVAE
-from rlkit.torch.vae.conditional_vae_trainer import DeltaCVAETrainer
-from rlkit.data_management.online_conditional_vae_replay_buffer import \
-        OnlineConditionalVaeRelabelingBuffer
 
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj import SawyerTwoObjectEnv
 from multiworld.envs.pygame.multiobject_pygame_env import Multiobj2DWallEnv
@@ -64,10 +59,8 @@ if __name__ == "__main__":
             ),
             td3_trainer_kwargs=dict(
                 discount=0.99,
-                # min_num_steps_before_training=4000,
                 reward_scale=1.0,
-                # render=False,
-                tau=1e-2,
+                # tau=1e-2,
             ),
             replay_buffer_kwargs=dict(
                 start_skew_epoch=10,
@@ -101,7 +94,6 @@ if __name__ == "__main__":
             vae_wrapped_env_kwargs=dict(
                 sample_from_true_prior=True,
             ),
-            # vae_path="datasets/pointmass/vae_pointmass_wall3.pkl",
         ),
         train_vae_variant=dict(
             latent_sizes=(4, 4),
