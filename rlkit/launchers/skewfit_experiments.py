@@ -140,7 +140,7 @@ def generate_vae_dataset(variant):
             tag,
         )
         if use_cached and osp.isfile(filename):
-            dataset = np.load(filename)
+            dataset = np.load(filename, allow_pickle=True)
             print("loaded data from saved file", filename)
         else:
             now = time.time()

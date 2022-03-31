@@ -38,8 +38,8 @@ def experiment(variant):
     achieved_goal_key = desired_goal_key.replace("desired", "achieved")
     es = GaussianAndEpsilonStrategy(
         action_space=expl_env.action_space,
-        max_sigma=.2,
-        min_sigma=.2,  # constant sigma
+        max_sigma=.3,
+        min_sigma=.3,  # constant sigma
         epsilon=.3,
     )
     obs_dim = expl_env.observation_space.spaces['observation'].low.size
@@ -129,38 +129,22 @@ if __name__ == "__main__":
     y_high = 0.7
     t = 0.05
     variant = dict(
-        env_id='SawyerPushNIPS-v0',
-        env_id='SawyerPushNIPSEasy-v0',
+        # env_id='SawyerPickupResetFreeEnv-v0',
+        env_id='SawyerReachXYEnv-v1',
         # env_class=SawyerMultiobjectEnv,
-        # env_kwargs=dict(
-        #     num_objects=1,
-        #     object_meshes=None,
-        #     fixed_start=True,
-        #     num_scene_objects=[1],
-        #     maxlen=0.1,
-        #     action_repeat=1,
-        #     puck_goal_low=(x_low + 0.01, y_low + 0.01),
-        #     puck_goal_high=(x_high - 0.01, y_high - 0.01),
-        #     hand_goal_low=(x_low + 3*t, y_low + t),
-        #     hand_goal_high=(x_high - 3*t, y_high -t),
-        #     mocap_low=(x_low + 2*t, y_low , 0.0),
-        #     mocap_high=(x_high - 2*t, y_high, 0.5),
-        #     object_low=(x_low + 0.01, y_low + 0.01, 0.02),
-        #     object_high=(x_high - 0.01, y_high - 0.01, 0.02),
-        #     use_textures=False,
-        #     cylinder_radius=0.05,
-        # ),
         algo_kwargs=dict(
-            num_epochs=500,
-            max_path_length=150,
+            num_epochs=350,
+            max_path_length=50,
             batch_size=128,
-            num_eval_steps_per_epoch=1000,
-            num_expl_steps_per_train_loop=1000,
+            num_eval_steps_per_epoch=500, # Total 10 paths per train loop
+            num_expl_steps_per_train_loop=500, # Total 10 paths per train loop
             num_trains_per_train_loop=1000,
             min_num_steps_before_training=1000,
         ),
         trainer_kwargs=dict(
             discount=0.99,
+            policy_learning_rate=1e-4
+            # qf_learning_rate=3e-4
         ),
         replay_buffer_kwargs=dict(
             max_size=100000,
@@ -183,7 +167,7 @@ if __name__ == "__main__":
 
     n_seeds = 2
     mode = 'local'
-    exp_prefix = 'oracle-pusher'
+    exp_prefix = 'oracle-reach'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
@@ -192,5 +176,5 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                use_gpu=True,
+                use_gpu=True
           )

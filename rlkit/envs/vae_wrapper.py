@@ -158,6 +158,10 @@ class VAEWrappedEnv(ProxyEnv, MultitaskEnv):
         info["vae_dist_l1"] = np.linalg.norm(dist, ord=1)
         info["vae_dist_l2"] = np.linalg.norm(dist, ord=2)
 
+        goal = obs['state_desired_goal']
+        observation = obs['state_achieved_goal']
+        info['state_distance'] = np.linalg.norm(observation - goal, ord=self.norm_order)
+
     """
     Multitask functions
     """

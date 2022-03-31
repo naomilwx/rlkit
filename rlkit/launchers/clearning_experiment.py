@@ -13,12 +13,10 @@ from rlkit.samplers.data_collector.vae_env import (
 from rlkit.torch.her.her import HERTrainer
 from rlkit.torch.sac.policies import MakeDeterministic
 from rlkit.torch.clearning.clearning import CLearningTrainer
-from rlkit.torch.skewfit.online_vae_algorithm import OnlineVaeAlgorithm
-from rlkit.torch.vae.online_vae_offpolicy_algorithm import OnlineVaeOffpolicyAlgorithm
 from rlkit.util.io import load_local_or_remote_file
 from rlkit.util.video import dump_video
 
-from rlkit.launchers.common import grill_preprocess_variant, get_envs, full_experiment_variant_preprocess, train_vae_and_update_variant
+from rlkit.launchers.common import get_exploration_strategy, grill_preprocess_variant, get_envs, full_experiment_variant_preprocess, train_vae_and_update_variant
 
 
 def train_vae(variant):
@@ -45,8 +43,6 @@ def clearning_experiment(variant):
     from rlkit.exploration_strategies.base import (
         PolicyWrappedWithExplorationStrategy
     )
-    from rlkit.exploration_strategies.gaussian_and_epsilon_strategy import \
-        GaussianAndEpsilonStrategy
     from rlkit.torch.vae.online_vae_offpolicy_algorithm import OnlineVaeOffpolicyAlgorithm
 
     import gc
@@ -105,12 +101,7 @@ def clearning_experiment(variant):
         # **variant['policy_kwargs']
     )
 
-    es = GaussianAndEpsilonStrategy(
-        action_space=env.action_space,
-        max_sigma=.2,
-        min_sigma=.2,  # constant sigma
-        epsilon=variant.get('exploration_noise', 0.1),
-    )
+    es = get_exploration_strategy(variant, env)
     expl_policy = PolicyWrappedWithExplorationStrategy(
         exploration_strategy=es,
         policy=policy,

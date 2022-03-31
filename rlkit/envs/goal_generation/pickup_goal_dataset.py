@@ -76,11 +76,11 @@ def generate_vae_dataset_from_params(
     info = {}
     if dataset_path is not None:
         filename = local_path_from_s3_or_local_path(dataset_path)
-        dataset = np.load(filename)
+        dataset = np.load(filename, allow_pickle=True)
         np.random.shuffle(dataset)
         N = dataset.shape[0]
     elif use_cached and osp.isfile(filename):
-        dataset = np.load(filename)
+        dataset = np.load(filename, allow_pickle=True)
         np.random.shuffle(dataset)
         print("loaded data from saved file", filename)
     else:

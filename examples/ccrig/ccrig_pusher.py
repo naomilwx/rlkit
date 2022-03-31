@@ -12,13 +12,6 @@ from rlkit.torch.vae.conditional_vae_trainer import DeltaCVAETrainer
 from rlkit.data_management.online_conditional_vae_replay_buffer import \
         OnlineConditionalVaeRelabelingBuffer
 
-# x_var = 0.2 # determines size of the workspace
-# x_low = -x_var
-# x_high = x_var
-# y_low = 0.5
-# y_high = 0.7
-# t = 0.05 # border of the workspace for the hand
-
 from examples.ccrig.env import default_multiobj_env
 env, args = default_multiobj_env()
 
@@ -28,9 +21,9 @@ if __name__ == "__main__":
         online_vae_exploration=False,
         imsize=48,
         init_camera=sawyer_init_camera_zoomed_in,
-        # env_class=SawyerTwoObjectEnv,
-        env_class=env,
-        env_kwargs=args,
+        env_id='SawyerReachXYEnv-v1',
+        # env_class=env,
+        # env_kwargs=args,
         grill_variant=dict(
             save_video=False,
             custom_goal_sampler='replay_buffer',
@@ -48,13 +41,12 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=100,
-            # max_path_length=20,
+            max_path_length=50,
             algo_kwargs=dict(
                 batch_size=128,
-                num_epochs=100,
-                num_eval_steps_per_epoch=1000,
-                num_expl_steps_per_train_loop=1000,
+                num_epochs=350,
+                num_eval_steps_per_epoch=500,
+                num_expl_steps_per_train_loop=500,
                 num_trains_per_train_loop=1000,
                 min_num_steps_before_training=1000, # was 4000
                 vae_training_schedule=vae_schedules.never_train,
@@ -67,7 +59,8 @@ if __name__ == "__main__":
             td3_trainer_kwargs=dict(
                 discount=0.99,
                 reward_scale=1.0,
-                tau=1e-2,
+                # tau=1e-2,
+                policy_learning_rate=1e-4
             ),
             replay_buffer_class=OnlineConditionalVaeRelabelingBuffer,
             replay_buffer_kwargs=dict(
@@ -89,8 +82,9 @@ if __name__ == "__main__":
             evaluation_goal_sampling_mode='reset_of_env',
             normalize=False,
             render=False,
-            exploration_noise=0.2,
-            exploration_type='ou',
+            exploration_type='epgaussian',
+            exploration_noise=0.3,
+            exploration_random_prob=0.3,
             training_mode='train',
             testing_mode='test',
             reward_params=dict(
@@ -101,9 +95,7 @@ if __name__ == "__main__":
             vae_wrapped_env_kwargs=dict(
                 sample_from_true_prior=True,
             ),
-            # algorithm='ONLINE-VAE-SAC-BERNOULLI',
             vae_trainer_class=DeltaCVAETrainer,
-            #vae_path="/home/ashvin/data/sasha/cond-rig/hyp-tuning/dropout/run12/id0/vae.pkl",
         ),
         train_vae_variant=dict(
             latent_sizes=(4, 4),
@@ -162,7 +154,6 @@ if __name__ == "__main__":
 
             save_period=25,
         ),
-        # region='us-west-2',
 
         logger_variant=dict(
             tensorboard=True,
@@ -189,7 +180,7 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 3
+    n_seeds = 1
     mode = 'local'
     exp_prefix = 'ccrig-pusher'
 
@@ -200,5 +191,5 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                use_gpu=True,
+                use_gpu=True
           )

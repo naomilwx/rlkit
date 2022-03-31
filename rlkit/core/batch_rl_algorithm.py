@@ -44,7 +44,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm):
             self.replay_buffer.add_paths(init_expl_paths)
             self.expl_data_collector.end_epoch(-1)
 
-        new_eval_paths = self.eval_data_collector.collect_new_paths(
+        self.eval_data_collector.collect_new_paths(
             self.max_path_length,
             self.num_eval_steps_per_epoch,
             discard_incomplete_paths=True,

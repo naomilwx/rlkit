@@ -23,7 +23,6 @@ from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_multiobj_subset import SawyerMultiobjectEnv
 
 from rlkit.launchers.launcher_util import run_experiment
-# import rlkit.util.hyperparameter as hyp
 
 import rlkit.util.hyperparameter as hyp
 from rlkit.launchers.common import env_from_env_id
@@ -37,8 +36,8 @@ def experiment(variant):
     achieved_goal_key = desired_goal_key.replace("desired", "achieved")
     es = GaussianAndEpsilonStrategy(
         action_space=expl_env.action_space,
-        max_sigma=.2,
-        min_sigma=.2,  # constant sigma
+        max_sigma=.3,
+        min_sigma=.3,  # constant sigma
         epsilon=.3,
     )
     obs_dim = expl_env.observation_space.spaces['observation'].low.size
@@ -128,19 +127,20 @@ if __name__ == "__main__":
     y_high = 0.7
     t = 0.05
     variant = dict(
-        env_id='SawyerDoorOpen-v0',       
+        env_id='SawyerReachXYEnv-v1',
         algo_kwargs=dict(
-            num_epochs=500,
-            max_path_length=100,
+            num_epochs=350,
+            max_path_length=50,
             batch_size=128,
-            num_eval_steps_per_epoch=1000,
-            num_expl_steps_per_train_loop=1000,
+            num_eval_steps_per_epoch=500,
+            num_expl_steps_per_train_loop=500,
             num_trains_per_train_loop=1000,
             min_num_steps_before_training=1000,
         ),
         trainer_kwargs=dict(
             discount=0.99,
-            reward_scale=1.0
+            reward_scale=1.0,
+            policy_learning_rate=1e-4
             # tau=1e-2
         ),
         replay_buffer_kwargs=dict(
@@ -173,5 +173,5 @@ if __name__ == "__main__":
                 exp_prefix=exp_prefix,
                 mode=mode,
                 variant=variant,
-                use_gpu=True,
+                use_gpu=True
           )

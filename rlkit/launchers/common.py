@@ -246,7 +246,7 @@ def generate_vae_dataset(variant):
             tag,
         )
         if use_cached and osp.isfile(filename):
-            dataset = np.load(filename)
+            dataset = np.load(filename, allow_pickle=True)
             if conditional_vae_dataset:
                 dataset = dataset.item()
             print("loaded data from saved file", filename)
@@ -582,10 +582,10 @@ def get_exploration_strategy(variant, env):
     from rlkit.exploration_strategies.epsilon_greedy import EpsilonGreedy
     from rlkit.exploration_strategies.gaussian_strategy import GaussianStrategy
     from rlkit.exploration_strategies.ou_strategy import OUStrategy
-    from rlkit.exploration_strategies.noop import NoopStrategy
+    from rlkit.exploration_strategies.gaussian_and_epsilon_strategy import GaussianAndEpsilonStrategy
 
     exploration_type = variant['exploration_type']
-    exploration_noise = variant.get('exploration_noise', 0.1)
+    exploration_noise = variant.get('exploration_noise', 0.2)
     if exploration_type == 'ou':
         es = OUStrategy(
             action_space=env.action_space,
@@ -603,9 +603,12 @@ def get_exploration_strategy(variant, env):
             action_space=env.action_space,
             prob_random_action=exploration_noise,
         )
-    elif exploration_type == 'noop':
-        es = NoopStrategy(
-            action_space=env.action_space
+    elif exploration_type == 'epgaussian':
+        es = GaussianAndEpsilonStrategy(
+            action_space=env.action_space,
+            max_sigma=exploration_noise,
+            min_sigma=exploration_noise,  # constant sigma
+            epsilon=variant.get('exploration_random_prob', 0.3)
         )
     else:
         raise Exception("Invalid type: " + exploration_type)

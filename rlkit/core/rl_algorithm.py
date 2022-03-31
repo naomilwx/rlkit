@@ -44,7 +44,6 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         self.post_epoch_funcs = []
         self.epoch = self._start_epoch
         self.num_epochs = num_epochs
-        print('init BaseRLAlgorithm')
 
     def train(self):
         timer.return_global_times = True

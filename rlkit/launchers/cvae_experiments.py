@@ -97,13 +97,7 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
         hidden_sizes=hidden_sizes,
         # **variant['policy_kwargs']
     )
-    #es = get_exploration_strategy(varient, env)
-    es = GaussianAndEpsilonStrategy(
-        action_space=env.action_space,
-        max_sigma=.2,
-        min_sigma=.2,  # constant sigma
-        epsilon=variant.get('exploration_noise', 0.1),
-    )
+    es = get_exploration_strategy(variant, env)
     expl_policy = PolicyWrappedWithExplorationStrategy(
         exploration_strategy=es,
         policy=policy,
