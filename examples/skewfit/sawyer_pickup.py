@@ -105,7 +105,6 @@ if __name__ == "__main__":
                 architecture=imsize48_default_architecture,
                 decoder_distribution='gaussian_identity_variance',
             ),
-            generate_vae_data_fctn=generate_vae_dataset,
             generate_vae_dataset_kwargs=dict(
                 N=10,
                 oracle_dataset=True,

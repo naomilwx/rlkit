@@ -69,7 +69,6 @@ if __name__ == "__main__":
                 # render=False,
                 tau=1e-2,
             ),
-            # replay_buffer_class=OnlineConditionalVaeRelabelingBuffer,
             replay_buffer_kwargs=dict(
                 start_skew_epoch=10,
                 max_size=int(100000),
@@ -80,7 +79,6 @@ if __name__ == "__main__":
                 priority_function_kwargs=dict(
                     sampling_method='importance_sampling',
                     decoder_distribution='gaussian_identity_variance',
-                    # decoder_distribution='bernoulli',
                     num_latents_to_sample=10,
                 ),
                 power=-1,
@@ -128,8 +126,6 @@ if __name__ == "__main__":
                 enviorment_dataset=False,
                 tag="reference4a",
             ),
-            # vae_trainer_class=DeltaCVAETrainer,
-            # vae_class=DeltaCVAE,
             vae_kwargs=dict(
                 input_channels=3,
                 architecture=imsize48_default_architecture_with_more_hidden_layers,
@@ -149,7 +145,6 @@ if __name__ == "__main__":
                 priority_function_kwargs=dict(
                     decoder_distribution='gaussian_identity_variance',
                     sampling_method='importance_sampling',
-                    # sampling_method='true_prior_sampling',
                     num_latents_to_sample=10,
                 ),
                 use_parallel_dataloading=False,

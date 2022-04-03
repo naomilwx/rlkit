@@ -21,14 +21,15 @@ if __name__ == "__main__":
         online_vae_exploration=False,
         imsize=48,
         init_camera=sawyer_init_camera_zoomed_in,
-        env_id='SawyerReachXYEnv-v1',
+        env_id='SawyerPushNIPSEasy-v0',
         # env_class=env,
         # env_kwargs=args,
         grill_variant=dict(
             save_video=False,
             custom_goal_sampler='replay_buffer',
+            context_schedule=1,
             online_vae_trainer_kwargs=dict(
-                beta=20,
+                beta=10,
                 lr=0,
             ),
             save_video_period=50,
@@ -41,15 +42,15 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=50,
+            max_path_length=100,
             algo_kwargs=dict(
                 batch_size=128,
-                num_epochs=350,
-                num_eval_steps_per_epoch=500,
-                num_expl_steps_per_train_loop=500,
+                num_epochs=300,
+                num_eval_steps_per_epoch=1000,
+                num_expl_steps_per_train_loop=1000,
                 num_trains_per_train_loop=1000,
                 min_num_steps_before_training=1000, # was 4000
-                vae_training_schedule=vae_schedules.never_train,
+                vae_training_schedule=vae_schedules.custom_schedule_3,
                 oracle_data=False,
                 vae_save_period=25,
                 parallel_vae_train=False,
@@ -100,10 +101,10 @@ if __name__ == "__main__":
         train_vae_variant=dict(
             latent_sizes=(4, 4),
             beta=10,
-            beta_schedule_kwargs=dict(
-                x_values=(0, 1000),
-                y_values=(1, 100),
-            ),
+            # beta_schedule_kwargs=dict(
+            #     x_values=(0, 1000),
+            #     y_values=(1, 100),
+            # ),
             context_schedule=1,
             num_epochs=300, # was 1500
             dump_skew_debug_plots=False,
@@ -111,7 +112,7 @@ if __name__ == "__main__":
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
                 N=10000,
-                n_random_steps=10,
+                n_random_steps=100,
                 test_p=.9,
                 use_cached=False,
                 show=False,
@@ -134,7 +135,7 @@ if __name__ == "__main__":
             ),
 
             algo_kwargs=dict(
-                start_skew_epoch=100,
+                start_skew_epoch=10,
                 is_auto_encoder=False,
                 batch_size=32, # was 128
                 lr=1e-3, #1E-4
@@ -180,9 +181,9 @@ if __name__ == "__main__":
         search_space, default_parameters=variant,
     )
 
-    n_seeds = 1
+    n_seeds = 2
     mode = 'local'
-    exp_prefix = 'ccrig-reach'
+    exp_prefix = 'ccrig-pusher'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):

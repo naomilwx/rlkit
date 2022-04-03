@@ -12,13 +12,13 @@ if __name__ == "__main__":
         imsize=48,
 
         init_camera=sawyer_init_camera_zoomed_in,
-        env_id='SawyerReachXYEnv-v1',
+        env_id='SawyerPushNIPSEasy-v0',
 
         grill_variant=dict(
             save_video=False,
             custom_goal_sampler='replay_buffer',
             online_vae_trainer_kwargs=dict(
-                beta=20,
+                beta=10,
                 lr=0,
             ),
             save_video_period=50,
@@ -31,15 +31,15 @@ if __name__ == "__main__":
             vf_kwargs=dict(
                 hidden_sizes=[400, 300],
             ),
-            max_path_length=50,
+            max_path_length=100,
             algo_kwargs=dict(
                 batch_size=128,
-                num_epochs=350,
-                num_eval_steps_per_epoch=500,
-                num_expl_steps_per_train_loop=500,
+                num_epochs=300,
+                num_eval_steps_per_epoch=1000,
+                num_expl_steps_per_train_loop=1000,
                 num_trains_per_train_loop=1000,
                 min_num_steps_before_training=1000,
-                vae_training_schedule=vae_schedules.never_train,
+                vae_training_schedule=vae_schedules.custom_schedule_3,
                 oracle_data=False,
                 vae_save_period=25,
                 parallel_vae_train=False,
@@ -58,7 +58,7 @@ if __name__ == "__main__":
                 max_size=int(100000),
                 fraction_goals_rollout_goals=0.2,
                 fraction_goals_env_goals=0.5,
-                # exploration_rewards_type='None',
+                exploration_rewards_type='None',
                 vae_priority_type='vae_prob',
                 priority_function_kwargs=dict(
                     sampling_method='importance_sampling',
@@ -96,7 +96,7 @@ if __name__ == "__main__":
             use_linear_dynamics=False,
             generate_vae_dataset_kwargs=dict(
                 N=10000,
-                n_random_steps=10,
+                n_random_steps=100,
                 test_p=.9,
                 use_cached=False,
                 show=False,
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     n_seeds = 2
     mode = 'local'
-    exp_prefix = 'rig-reach'
+    exp_prefix = 'rig-pusher'
 
     for exp_id, variant in enumerate(sweeper.iterate_hyperparameters()):
         for _ in range(n_seeds):
