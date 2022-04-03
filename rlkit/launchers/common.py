@@ -146,9 +146,13 @@ def train_vae(variant, return_data=False):
     model.to(ptu.device)
 
     vae_trainer_class = variant.get('vae_trainer_class', ConvVAETrainer)
-    trainer = vae_trainer_class(model, beta=beta,
-                       beta_schedule=beta_schedule,
-                       **variant['algo_kwargs'])
+    trainer = vae_trainer_class(
+        train_dataset,
+        test_dataset,
+        model,
+        beta=beta,
+        beta_schedule=beta_schedule,
+        **variant['algo_kwargs'])
     save_period = variant['save_period']
 
     dump_skew_debug_plots = variant.get('dump_skew_debug_plots', False)

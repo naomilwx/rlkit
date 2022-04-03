@@ -18,6 +18,7 @@ from torch.distributions import Normal
 
 from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.networks import Mlp
+from rlkit.torch.vae.vae_trainer import relative_probs_from_log_probs
 from rlkit.util.ml_util import ConstantSchedule, PiecewiseLinearSchedule
 import os.path as osp
 
@@ -238,18 +239,6 @@ class OnlineConditionalVaeRelabelingBuffer(OnlineVaeRelabelingBuffer):
             batch['rewards'] += exploration_rewards_scale * batch['exploration_rewards']
         return batch
 
-
-def relative_probs_from_log_probs(log_probs):
-    """
-    Returns relative probability from the log probabilities. They're not exactly
-    equal to the probability, but relative scalings between them are all maintained.
-
-    For correctness, all log_probs must be passed in at the same time.
-    """
-    probs = np.exp(log_probs - log_probs.mean())
-    assert not np.any(probs <= 0), 'choose a smaller power'
-    return probs
-
 def compute_log_p_log_q_log_d(
     model,
     batch,
@@ -311,8 +300,6 @@ def compute_p_x_np_to_np(
     num_latents_to_sample=1,
     sampling_method='importance_sampling'
 ):
-    # data = batch["observations"]
-    # assert data.dtype != np.uint8, 'images should be normalized'
     assert power >= -1 and power <= 0, 'power for skew-fit should belong to [-1, 0]'
 
     log_p, log_q, log_d = compute_log_p_log_q_log_d(

@@ -22,6 +22,8 @@ import time
 class VAETrainer(object):
     def __init__(
             self,
+            train_dataset,
+            test_dataset,
             model,
             batch_size=128,
             log_interval=0,
@@ -89,6 +91,11 @@ class VAETrainer(object):
             self.priority_function_kwargs = dict()
         else:
             self.priority_function_kwargs = priority_function_kwargs
+        
+        if self.skew_dataset:
+            self._train_weights = self._compute_train_weights()
+        else:
+            self._train_weights = None
 
         if use_parallel_dataloading:
             self.train_dataset_pt = ImageDataset(
@@ -148,6 +155,44 @@ class VAETrainer(object):
     @property
     def log_dir(self):
         return logger.get_snapshot_dir()
+    
+    def update_train_weights(self):
+        if self.skew_dataset:
+            self._train_weights = self._compute_train_weights()
+            if self.use_parallel_dataloading:
+                self.train_dataloader = DataLoader(
+                    self.train_dataset_pt,
+                    sampler=InfiniteWeightedRandomSampler(self.train_dataset, self._train_weights),
+                    batch_size=self.batch_size,
+                    drop_last=False,
+                    num_workers=self.train_data_workers,
+                    pin_memory=True,
+                )
+                self.train_dataloader = iter(self.train_dataloader)
+    
+    def _compute_train_weights(self):
+        method = self.skew_config.get('method', 'squared_error')
+        power = self.skew_config.get('power', 1)
+        batch_size = 512
+        size = self.train_dataset.shape[0]
+        next_idx = min(batch_size, size)
+        cur_idx = 0
+        weights = np.zeros(size)
+        while cur_idx < self.train_dataset.shape[0]:
+            idxs = np.arange(cur_idx, next_idx)
+            data = self.train_dataset[idxs, :]
+            if method == 'vae_prob':
+                data = normalize_image(data)
+                weights[idxs] = compute_p_x_np_to_np(self.model, data, power=power, **self.priority_function_kwargs)
+            else:
+                raise NotImplementedError('Method {} not supported'.format(method))
+            cur_idx = next_idx
+            next_idx += batch_size
+            next_idx = min(next_idx, size)
+
+        if method == 'vae_prob':
+            weights = relative_probs_from_log_probs(weights)
+        return weights
 
     def get_dataset_stats(self, data):
         torch_input = ptu.from_numpy(normalize_image(data))
@@ -174,20 +219,20 @@ class VAETrainer(object):
         self.model = vae
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
 
-    def get_batch(self, test_data=False, epoch=None):
+    def get_batch(self, train=True, epoch=None):
         if self.use_parallel_dataloading:
-            if test_data:
+            if not train:
                 dataloader = self.test_dataloader
             else:
                 dataloader = self.train_dataloader
             samples = next(dataloader).to(ptu.device)
             return samples
 
-        dataset = self.test_dataset if test_data else self.train_dataset
+        dataset = self.train_dataset if train else self.test_dataset
         skew = False
         if epoch is not None:
             skew = (self.start_skew_epoch < epoch)
-        if not test_data and self.skew_dataset and skew:
+        if train and self.skew_dataset and skew:
             probs = self._train_weights / np.sum(self._train_weights)
             ind = np.random.choice(
                 len(probs),
@@ -216,6 +261,7 @@ class VAETrainer(object):
         for b in range(batches):
             self.train_batch(epoch, dataset.random_batch(self.batch_size))
         self.eval_statistics["train/epoch_duration"].append(time.time() - start_time)
+        self.update_train_weights()
 
     def test_epoch(self, epoch, dataset, batches=10):
         start_time = time.time()
@@ -1158,3 +1204,92 @@ class DeltaDynamicsCVAETrainer(CDVAETrainer):
         ])
         save_dir = osp.join(self.log_dir, 'r%d.png' % epoch)
         save_image(comparison.data.cpu(), save_dir, nrow=n)
+
+def compute_p_x_np_to_np(
+    model,
+    data,
+    power,
+    decoder_distribution='bernoulli',
+    num_latents_to_sample=1,
+    sampling_method='importance_sampling'
+):
+    # assert data.dtype == np.float64, 'images should be normalized'
+    assert power >= -1 and power <= 0, 'power for skew-fit should belong to [-1, 0]'
+
+    log_p, log_q, log_d = compute_log_p_log_q_log_d(
+        model,
+        data,
+        decoder_distribution,
+        num_latents_to_sample,
+        sampling_method
+    )
+
+    if sampling_method == 'importance_sampling':
+        log_p_x = (log_p - log_q + log_d).mean(dim=1)
+    elif sampling_method == 'biased_sampling' or sampling_method == 'true_prior_sampling':
+        log_p_x = log_d.mean(dim=1)
+    else:
+        raise EnvironmentError('Invalid Sampling Method Provided')
+    log_p_x_skewed = power * log_p_x
+    return ptu.get_numpy(log_p_x_skewed)
+
+def relative_probs_from_log_probs(log_probs):
+    """
+    Returns relative probability from the log probabilities. They're not exactly
+    equal to the probability, but relative scalings between them are all maintained.
+
+    For correctness, all log_probs must be passed in at the same time.
+    """
+    probs = np.exp(log_probs - log_probs.mean())
+    assert not np.any(probs <= 0), 'choose a smaller power'
+    np.nan_to_num(probs, neginf=0, copy=False)
+    return probs
+
+
+def compute_log_p_log_q_log_d(
+    model,
+    data,
+    decoder_distribution='bernoulli',
+    num_latents_to_sample=1,
+    sampling_method='importance_sampling'
+):
+    # assert data.dtype == np.float64, 'images should be normalized'
+    imgs = ptu.from_numpy(data)
+    latent_distribution_params = model.encode(imgs)
+    batch_size = data.shape[0]
+    representation_size = model.representation_size
+    log_p, log_q, log_d = ptu.zeros((batch_size, num_latents_to_sample)), ptu.zeros(
+        (batch_size, num_latents_to_sample)), ptu.zeros((batch_size, num_latents_to_sample))
+    true_prior = Normal(ptu.zeros((batch_size, representation_size)),
+                        ptu.ones((batch_size, representation_size)))
+    mus, logvars = latent_distribution_params
+    for i in range(num_latents_to_sample):
+        if sampling_method == 'importance_sampling':
+            latents = model.rsample(latent_distribution_params)
+        elif sampling_method == 'biased_sampling':
+            latents = model.rsample(latent_distribution_params)
+        elif sampling_method == 'true_prior_sampling':
+            latents = true_prior.rsample()
+        else:
+            raise EnvironmentError('Invalid Sampling Method Provided')
+
+        stds = logvars.exp().pow(.5)
+        vae_dist = Normal(mus, stds)
+        log_p_z = true_prior.log_prob(latents).sum(dim=1)
+        log_q_z_given_x = vae_dist.log_prob(latents).sum(dim=1)
+        if decoder_distribution == 'bernoulli':
+            decoded = model.decode(latents)[0]
+            log_d_x_given_z = torch.log(imgs * decoded + (1 - imgs) * (1 - decoded) + 1e-8).sum(dim=1)
+        elif decoder_distribution == 'gaussian_identity_variance':
+            _, obs_distribution_params = model.decode(latents)
+            dec_mu, dec_logvar = obs_distribution_params
+            dec_var = dec_logvar.exp()
+            decoder_dist = Normal(dec_mu, dec_var.pow(.5))
+            log_d_x_given_z = decoder_dist.log_prob(imgs).sum(dim=1)
+        else:
+            raise EnvironmentError('Invalid Decoder Distribution Provided')
+
+        log_p[:, i] = log_p_z
+        log_q[:, i] = log_q_z_given_x
+        log_d[:, i] = log_d_x_given_z
+    return log_p, log_q, log_d
