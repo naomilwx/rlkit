@@ -68,9 +68,9 @@ class OnlineVaeAlgorithm(TorchBatchRLAlgorithm):
         if self.parallel_vae_train and self._vae_training_process is None:
             self.init_vae_training_subprocess()
         should_train, amount_to_train = self.vae_training_schedule(epoch)
-        rl_start_epoch = int(self.min_num_steps_before_training / (
-                self.num_expl_steps_per_train_loop * self.num_train_loops_per_epoch
-        ))
+        # rl_start_epoch = int(self.min_num_steps_before_training / (
+        #         self.num_expl_steps_per_train_loop * self.num_train_loops_per_epoch
+        # ))
         if should_train: # or epoch <= (rl_start_epoch - 1):
             if self.parallel_vae_train:
                 assert self._vae_training_process.is_alive()
