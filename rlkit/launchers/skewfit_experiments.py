@@ -445,8 +445,8 @@ def skewfit_experiment(variant):
         **variant['replay_buffer_kwargs']
     )
     vae_trainer = ConvVAETrainer(
-        # variant['vae_train_data'],
-        # variant['vae_test_data'],
+        variant['vae_train_data'],
+        variant['vae_test_data'],
         env.vae,
         **variant['online_vae_trainer_kwargs']
     )

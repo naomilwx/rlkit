@@ -124,6 +124,8 @@ def clearning_experiment(variant):
     vae_trainer_class = variant.get("vae_trainer_class", ConvVAETrainer)
     print('vae_trainer_class', vae_trainer_class.__name__)
     vae_trainer = vae_trainer_class(
+        variant['vae_train_data'],
+        variant['vae_test_data'],
         env.vae,
         **variant['online_vae_trainer_kwargs']
     )

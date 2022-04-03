@@ -4,6 +4,7 @@ from rlkit.data_management.online_vae_replay_buffer import \
     OnlineVaeRelabelingBuffer
 from rlkit.data_management.shared_obs_dict_replay_buffer \
     import SharedObsDictRelabelingBuffer
+from rlkit.torch.skewfit.online_vae_algorithm import OnlineVaeAlgorithm
 import rlkit.torch.vae.vae_schedules as vae_schedules
 from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import (
@@ -169,9 +170,9 @@ class OnlineVaeOffpolicyAlgorithm(TorchBatchRLAlgorithm):
         if self.parallel_vae_train and self._vae_training_process is None:
             self.init_vae_training_subprocess()
         should_train, amount_to_train = self.vae_training_schedule(epoch)
-        rl_start_epoch = int(self.min_num_steps_before_training / (
-                self.num_expl_steps_per_train_loop * self.num_train_loops_per_epoch
-        ))
+        # rl_start_epoch = int(self.min_num_steps_before_training / (
+        #         self.num_expl_steps_per_train_loop * self.num_train_loops_per_epoch
+        # ))
         if should_train: # or epoch <= (rl_start_epoch - 1):
             if self.parallel_vae_train:
                 assert self._vae_training_process.is_alive()

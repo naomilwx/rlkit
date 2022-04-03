@@ -6,9 +6,6 @@ import numpy as np
 
 from rlkit.samplers.data_collector.path_collector import VAEWrappedEnvPathCollector
 from rlkit.torch.her.her import HERTrainer
-from rlkit.torch.sac.policies import MakeDeterministic
-from rlkit.torch.sac.sac import SACTrainer
-from rlkit.torch.skewfit.online_vae_algorithm import OnlineVaeAlgorithm
 
 from rlkit.util.video import VideoSaveFunction
 
@@ -38,8 +35,6 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
     from rlkit.exploration_strategies.base import (
         PolicyWrappedWithExplorationStrategy
     )
-    from rlkit.exploration_strategies.gaussian_and_epsilon_strategy import \
-        GaussianAndEpsilonStrategy
     from rlkit.torch.vae.online_vae_offpolicy_algorithm import OnlineVaeOffpolicyAlgorithm
 
     import gc
@@ -120,6 +115,8 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
     vae_trainer_class = variant.get("vae_trainer_class", ConvVAETrainer)
     print('vae_trainer_class', vae_trainer_class.__name__)
     vae_trainer = vae_trainer_class(
+        variant['vae_train_data'],
+        variant['vae_test_data'],
         env.vae,
         **variant['online_vae_trainer_kwargs']
     )
