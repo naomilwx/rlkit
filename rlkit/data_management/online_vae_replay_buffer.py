@@ -266,7 +266,7 @@ class OnlineVaeRelabelingBuffer(ObsDictRelabelingBuffer):
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size] ** self.power
             p_sum = np.sum(self._vae_sample_probs)
             assert p_sum > 0, "Unnormalized p sum is {}".format(p_sum)
-            self._vae_sample_probs /= np.sum(self._vae_sample_probs)
+            self._vae_sample_probs /= p_sum
             self._vae_sample_probs = self._vae_sample_probs.flatten()
 
     def sample_weighted_indices(self, batch_size):
@@ -275,6 +275,14 @@ class OnlineVaeRelabelingBuffer(ObsDictRelabelingBuffer):
             self._vae_sample_probs is not None and
             self.skew
         ):
+            if np.isnan(self._vae_sample_probs).any():
+                np.nan_to_num(self._vae_sample_probs, neginf=0, copy=False)
+                print("Found nan values in vae sample probabilities")
+            p_sum = np.sum(self._vae_sample_probs)
+            if p_sum != 1:
+                print("sum of probability is", p_sum)
+                return self._sample_indices(batch_size)
+
             indices = np.random.choice(
                 len(self._vae_sample_probs),
                 batch_size,
@@ -490,6 +498,7 @@ def relative_probs_from_log_probs(log_probs):
     For correctness, all log_probs must be passed in at the same time.
     """
     probs = np.exp(log_probs - log_probs.mean())
+    np.nan_to_num(probs, neginf=0, copy=False)
     assert not np.any(probs <= 0), 'choose a smaller power'
     return probs
 

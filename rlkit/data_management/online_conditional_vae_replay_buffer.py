@@ -139,7 +139,7 @@ class OnlineConditionalVaeRelabelingBuffer(OnlineVaeRelabelingBuffer):
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size] ** self.power
             p_sum = np.sum(self._vae_sample_probs)
             assert p_sum > 0, "Unnormalized p sum is {}".format(p_sum)
-            self._vae_sample_probs /= np.sum(self._vae_sample_probs)
+            self._vae_sample_probs /= p_sum
             self._vae_sample_probs = self._vae_sample_probs.flatten()
 
 
