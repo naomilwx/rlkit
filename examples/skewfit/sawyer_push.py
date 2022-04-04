@@ -13,7 +13,8 @@ if __name__ == "__main__":
         online_vae_exploration=False,
         imsize=48,
         init_camera=sawyer_init_camera_zoomed_in,
-        env_id='SawyerPushNIPSEasy-v0',
+        # env_id='SawyerPushNIPSEasy-v0',
+        env_id='SawyerReachXYEnv-v1',
         skewfit_variant=dict(
             save_video=True,
             custom_goal_sampler='replay_buffer',
@@ -33,13 +34,13 @@ if __name__ == "__main__":
             ),
             max_path_length=50,
             algo_kwargs=dict(
-                batch_size=1024,
-                num_epochs=500, # Testing. was 1000
+                batch_size=128,
+                num_epochs=300, # Testing. was 1000
                 num_eval_steps_per_epoch=500,
                 num_expl_steps_per_train_loop=500,
                 num_trains_per_train_loop=1000,
                 min_num_steps_before_training=10000,
-                vae_training_schedule=vae_schedules.custom_schedule_2,
+                vae_training_schedule=vae_schedules.never_train,
                 oracle_data=False,
                 vae_save_period=50,
                 parallel_vae_train=False,
@@ -50,6 +51,11 @@ if __name__ == "__main__":
                 soft_target_tau=1e-3,
                 target_update_period=1,  # 1
                 use_automatic_entropy_tuning=True,
+            ),
+            td3_trainer_kwargs=dict(
+                discount=0.99,
+                reward_scale=1.0,
+                policy_learning_rate=1e-4
             ),
             replay_buffer_kwargs=dict(
                 start_skew_epoch=10,
@@ -63,7 +69,7 @@ if __name__ == "__main__":
                     decoder_distribution='gaussian_identity_variance',
                     num_latents_to_sample=10,
                 ),
-                power=-0.5,
+                power=-1,
                 relabeling_goal_sampling_mode='vae_prior',
             ),
             exploration_goal_sampling_mode='vae_prior',
@@ -85,12 +91,13 @@ if __name__ == "__main__":
         ),
         train_vae_variant=dict(
             representation_size=4,
-            beta=20,
-            num_epochs=0,
+            beta=10,
+            num_epochs=300, # up from 0
             dump_skew_debug_plots=False,
             decoder_activation='gaussian',
             generate_vae_dataset_kwargs=dict(
-                N=40,
+                N=10000,
+                n_random_steps=10,
                 test_p=.9,
                 use_cached=False,
                 show=False,
@@ -108,11 +115,11 @@ if __name__ == "__main__":
             algo_kwargs=dict(
                 start_skew_epoch=50, # was 5000
                 is_auto_encoder=False,
-                batch_size=64,
+                batch_size=32,
                 lr=1e-3,
                 skew_config=dict(
                     method='vae_prob',
-                    power=-0.5,
+                    power=-1,
                 ),
                 skew_dataset=True,
                 priority_function_kwargs=dict(

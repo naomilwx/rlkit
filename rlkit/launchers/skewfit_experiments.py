@@ -447,8 +447,8 @@ def skewfit_experiment(variant):
     import rlkit.torch.pytorch_util as ptu
     from rlkit.data_management.online_vae_replay_buffer import \
         OnlineVaeRelabelingBuffer
-    from rlkit.torch.networks import ConcatMlp
-    from rlkit.torch.sac.policies import TanhGaussianPolicy
+    from rlkit.torch.networks import ConcatMlp, TanhMlpPolicy
+    from rlkit.torch.td3.td3 import TD3Trainer
     from rlkit.torch.vae.vae_trainer import ConvVAETrainer
 
     skewfit_preprocess_variant(variant)
@@ -491,9 +491,14 @@ def skewfit_experiment(variant):
         output_size=1,
         hidden_sizes=hidden_sizes,
     )
-    policy = TanhGaussianPolicy(
-        obs_dim=obs_dim,
-        action_dim=action_dim,
+    policy = TanhMlpPolicy(
+        input_size=obs_dim,
+        output_size=action_dim,
+        hidden_sizes=hidden_sizes,
+    )
+    target_policy = TanhMlpPolicy(
+        input_size=obs_dim,
+        output_size=action_dim,
         hidden_sizes=hidden_sizes,
     )
 
@@ -516,14 +521,23 @@ def skewfit_experiment(variant):
     assert 'vae_training_schedule' not in variant, "Just put it in algo_kwargs"
     max_path_length = variant['max_path_length']
 
-    trainer = SACTrainer(
-        env=env,
+    # trainer = SACTrainer(
+    #     env=env,
+    #     policy=policy,
+    #     qf1=qf1,
+    #     qf2=qf2,
+    #     target_qf1=target_qf1,
+    #     target_qf2=target_qf2,
+    #     **variant['twin_sac_trainer_kwargs']
+    # )
+    trainer = TD3Trainer(
         policy=policy,
         qf1=qf1,
         qf2=qf2,
         target_qf1=target_qf1,
         target_qf2=target_qf2,
-        **variant['twin_sac_trainer_kwargs']
+        target_policy=target_policy,
+        **variant['td3_trainer_kwargs']
     )
     trainer = HERTrainer(trainer)
     eval_path_collector = VAEWrappedEnvPathCollector(
