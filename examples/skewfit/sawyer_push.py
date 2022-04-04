@@ -76,8 +76,9 @@ if __name__ == "__main__":
             evaluation_goal_sampling_mode='reset_of_env',
             normalize=False,
             render=False,
-            exploration_noise=0.0,
-            exploration_type='ou',
+            exploration_type='epgaussian',
+            exploration_noise=0.3,
+            exploration_random_prob=0.3,
             training_mode='train',
             testing_mode='test',
             reward_params=dict(
