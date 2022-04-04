@@ -40,7 +40,7 @@ class OnlineVaeRelabelingBuffer(ObsDictRelabelingBuffer):
             exploration_rewards_scale=1.0,
             vae_priority_type='None',
             start_skew_epoch=0,
-            power=1.0,
+            power=-1,
             internal_keys=None,
             exploration_schedule_kwargs=None,
             priority_function_kwargs=None,
@@ -259,15 +259,16 @@ class OnlineVaeRelabelingBuffer(ObsDictRelabelingBuffer):
             directly here if not.
             """
             if self.vae_priority_type == 'vae_prob':
-                self._vae_sample_priorities[:self._size] = relative_probs_from_log_probs(
-                    self._vae_sample_priorities[:self._size]
-                )
+                # self._vae_sample_priorities[:self._size] = relative_probs_from_log_probs(
+                #     self._vae_sample_priorities[:self._size]
+                # )
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size]
             else:
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size] ** self.power
+
+            # self._vae_sample_probs = np.clip(self._vae_sample_probs, 0, 10000)
             p_sum = np.sum(self._vae_sample_probs)
             assert p_sum > 0, "Unnormalized p sum is {}".format(p_sum)
-            # p_sum = min(p_sum, 1e-40)
             self._vae_sample_probs /= p_sum
             self._vae_sample_probs = self._vae_sample_probs.flatten()
 

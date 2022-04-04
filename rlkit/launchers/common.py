@@ -80,7 +80,7 @@ def train_vae_and_update_variant(variant):
 
 
 def train_vae(variant, return_data=False):
-    from rlkit.util.ml_util import PiecewiseLinearSchedule, ConstantSchedule
+    from rlkit.util.ml_util import PiecewiseLinearSchedule
     from rlkit.torch.vae.conv_vae import (
         ConvVAE,
         ConvDynamicsVAE,
@@ -97,11 +97,9 @@ def train_vae(variant, return_data=False):
     beta = variant["beta"]
     representation_size = variant.get("representation_size", variant.get("latent_sizes", None))
     use_linear_dynamics = variant.get('use_linear_dynamics', False)
-    generate_vae_dataset_fctn = variant.get('generate_vae_data_fctn',
-                                            generate_vae_dataset)
     variant['generate_vae_dataset_kwargs']['use_linear_dynamics'] = use_linear_dynamics
     variant['generate_vae_dataset_kwargs']['batch_size'] = variant['algo_kwargs']['batch_size']
-    train_dataset, test_dataset, info = generate_vae_dataset_fctn(
+    train_dataset, test_dataset, info = generate_vae_dataset(
         variant['generate_vae_dataset_kwargs'])
 
     if use_linear_dynamics:
@@ -116,10 +114,7 @@ def train_vae(variant, return_data=False):
         beta_schedule = None
     if 'context_schedule' in variant:
         schedule = variant['context_schedule']
-        if type(schedule) is dict:
-            context_schedule = PiecewiseLinearSchedule(**schedule)
-        else:
-            context_schedule = ConstantSchedule(schedule)
+        context_schedule = get_context_schedule(schedule)
         variant['algo_kwargs']['context_schedule'] = context_schedule
     if variant.get('decoder_activation', None) == 'sigmoid':
         decoder_activation = torch.nn.Sigmoid()
@@ -182,7 +177,12 @@ def train_vae(variant, return_data=False):
         return model, train_dataset, test_dataset
     return model
 
-
+def get_context_schedule(schedule):
+    from rlkit.util.ml_util import PiecewiseLinearSchedule, ConstantSchedule
+    if type(schedule) is dict:
+        return PiecewiseLinearSchedule(**schedule)
+    else:
+        return ConstantSchedule(schedule)
 
 def generate_vae_dataset(variant):
     print(variant)
@@ -446,13 +446,11 @@ def generate_vae_dataset(variant):
             dict(batch_size=batch_size, num_workers=0, )
         )
 
-        train_data_loader = data.DataLoader(train_dataset,
-            shuffle=True, drop_last=True, **train_batch_loader_kwargs)
-        test_data_loader = data.DataLoader(test_dataset,
-            shuffle=True, drop_last=True, **test_batch_loader_kwargs)
-
-        train_dataset = InfiniteBatchLoader(train_data_loader)
-        test_dataset = InfiniteBatchLoader(test_data_loader)
+        train_dataloader = InfiniteBatchLoader(data.DataLoader(train_dataset,
+            shuffle=True, drop_last=True, **train_batch_loader_kwargs), train_dataset)
+        test_dataloader = InfiniteBatchLoader(data.DataLoader(test_dataset,
+            shuffle=True, drop_last=True, **test_batch_loader_kwargs), test_dataset)
+        return train_dataloader, test_dataloader, info
     else:
         n = int(N * test_p)
         train_dataset = ImageObservationDataset(dataset[:n, :])

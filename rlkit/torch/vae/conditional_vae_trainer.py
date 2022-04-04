@@ -106,6 +106,8 @@ class CVAETrainer(ConditionalConvVAETrainer):
 
     def __init__(
             self,
+            train_dataset,
+            test_dataset,
             model,
             batch_size=128,
             log_interval=0,
@@ -130,6 +132,8 @@ class CVAETrainer(ConditionalConvVAETrainer):
             weight_decay=0.001,
     ):
         super().__init__(
+            train_dataset,
+            test_dataset,
             model,
             batch_size,
             log_interval,
@@ -273,6 +277,8 @@ class DeltaCVAETrainer(ConditionalConvVAETrainer):
 
     def __init__(
             self,
+            train_dataset,
+            test_dataset,
             model,
             batch_size=128,
             log_interval=0,
@@ -298,6 +304,8 @@ class DeltaCVAETrainer(ConditionalConvVAETrainer):
             weight_decay=0.001,
     ):
         super().__init__(
+            train_dataset,
+            test_dataset,
             model,
             batch_size,
             log_interval,
@@ -419,7 +427,6 @@ class DeltaCVAETrainer(ConditionalConvVAETrainer):
         comparison = torch.cat(all_imgs)
         save_dir = osp.join(self.log_dir, 's%d.png' % epoch)
         save_image(comparison.data.cpu(), save_dir, nrow=8)
-
 
 class CDVAETrainer(CVAETrainer):
 

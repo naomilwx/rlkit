@@ -21,6 +21,9 @@ class ObservationDataset(BatchLoader):
         self.size = data.shape[0]
         self.info = info
 
+    def raw_data(self):
+        return self.data
+
     def random_batch(self, batch_size):
         i = np.random.choice(self.size, batch_size, replace=(self.size < batch_size))
         data_dict = {
@@ -36,6 +39,9 @@ class ImageObservationDataset(BatchLoader):
         self.size = data.shape[0]
         self.info = info
         self.normalize = normalize
+
+    def raw_data(self):
+        return self.data
 
     def random_batch(self, batch_size):
         i = np.random.choice(self.size, batch_size, replace=(self.size < batch_size))
@@ -55,6 +61,9 @@ class TrajectoryDataset(BatchLoader):
         self.data = data
         self.info = info
 
+    def raw_data(self):
+        return self.data['observations']
+
     def random_batch(self, batch_size):
         traj_i = np.random.choice(np.arange(self.size), batch_size)
         trans_i = np.random.choice(np.arange(self.traj_length - 1), batch_size)
@@ -73,6 +82,9 @@ class EnvironmentDataset(BatchLoader):
         self.sample_size = data['observations'].shape[1]
         self.data = data
         self.info = info
+
+    def raw_data(self):
+        return self.data['observations']
 
     def random_batch(self, batch_size):
         env_i = np.random.choice(self.num_envs, batch_size)
@@ -111,6 +123,9 @@ class InitialObservationDataset(BatchLoader):
         self.data = data
         self.info = info
 
+    def raw_data(self):
+        return self.data['observations']
+
     def random_batch(self, batch_size):
         traj_i = np.random.choice(self.size, batch_size)
         trans_i = np.random.choice(self.traj_length, batch_size)
@@ -140,6 +155,9 @@ class ConditionalDynamicsDataset(BatchLoader):
         self.traj_length = data['observations'].shape[1]
         self.data = data
         self.info = info
+
+    def raw_data(self):
+        return self.data['observations']
 
     def random_batch(self, batch_size):
         traj_i = np.random.choice(self.size, batch_size)
@@ -201,6 +219,9 @@ class InitialObservationNumpyDataset(data.Dataset):
 
         if 'env' not in self.data:
             self.data['env'] = self.data['observations'][:, 0, :]
+
+    def raw_data(self):
+        return self.data['observations']
 
     def __len__(self):
         return self.size * self.traj_length
