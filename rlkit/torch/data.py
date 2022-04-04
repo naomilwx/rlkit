@@ -88,9 +88,13 @@ class BatchLoader(object):
 
 class InfiniteBatchLoader(BatchLoader):
     """Wraps a PyTorch DataLoader"""
-    def __init__(self, data_loader):
+    def __init__(self, data_loader, dataset):
         self.dataset_loader = data_loader
         self.iterator = iter(self.dataset_loader)
+        self.dataset = dataset
+
+    def raw_data(self):
+        return self.dataset.raw_data()
 
     def random_batch(self, batch_size):
         assert batch_size == self.dataset_loader.batch_size

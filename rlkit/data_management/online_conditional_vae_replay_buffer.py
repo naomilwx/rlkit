@@ -34,18 +34,17 @@ class OnlineConditionalVaeRelabelingBuffer(OnlineVaeRelabelingBuffer):
         weighted_idxs = self.sample_weighted_indices(
             batch_size,
         )
-
         next_image_obs = self._next_obs[self.decoded_obs_key][weighted_idxs]
         observations = ptu.from_numpy(next_image_obs)
-
+        # TODO: this assumes traj length of 100
         x_0_indices = (weighted_idxs // 100) * 100
         x_0 = self._next_obs[self.decoded_obs_key][x_0_indices]
         x_0 = ptu.from_numpy(x_0)
-
         return dict(
             observations=observations,
             x_t=observations,
             x_0=x_0,
+            env=x_0,
         )
 
     def refresh_latents(self, epoch):
@@ -78,8 +77,7 @@ class OnlineConditionalVaeRelabelingBuffer(OnlineVaeRelabelingBuffer):
         obs_square_sum = np.zeros(np.array([self.vae.latent_sizes, ]).sum())
         while cur_idx < self._size:
             idxs = np.arange(cur_idx, next_idx)
-            #FIX THIS ASSUMES TRAJ LENGTH 100
-            import ipdb; ipdb.set_trace()
+            #TODO: FIX THIS ASSUMES TRAJ LENGTH 100
             x_0_idxs = (idxs // 100) * 100
 
             x_0 = ptu.from_numpy(self._obs[self.decoded_obs_key][x_0_idxs])
@@ -132,9 +130,9 @@ class OnlineConditionalVaeRelabelingBuffer(OnlineVaeRelabelingBuffer):
             directly here if not.
             """
             if self.vae_priority_type == 'vae_prob':
-                self._vae_sample_priorities[:self._size] = relative_probs_from_log_probs(
-                    self._vae_sample_priorities[:self._size]
-                )
+                # self._vae_sample_priorities[:self._size] = relative_probs_from_log_probs(
+                #     self._vae_sample_priorities[:self._size]
+                # )
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size]
             else:
                 self._vae_sample_probs = self._vae_sample_priorities[:self._size] ** self.power

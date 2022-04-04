@@ -114,12 +114,17 @@ def grill_her_td3_experiment_offpolicy_online_vae(variant):
 
     vae_trainer_class = variant.get("vae_trainer_class", ConvVAETrainer)
     print('vae_trainer_class', vae_trainer_class.__name__)
+    if 'context_schedule' in variant:
+        schedule = variant['context_schedule']
+        variant['online_vae_trainer_kwargs']['context_schedule'] = get_context_schedule(schedule)
+    
     vae_trainer = vae_trainer_class(
         variant['vae_train_data'],
         variant['vae_test_data'],
         env.vae,
         **variant['online_vae_trainer_kwargs']
     )
+    
     assert 'vae_training_schedule' not in variant, "Just put it in algo_kwargs"
     max_path_length = variant['max_path_length']
 
